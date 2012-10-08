@@ -1,0 +1,47 @@
+# global settings
+ifdef NO_DEBUG
+	CC=g++
+else
+	CC=g++ -g
+endif
+
+.PHONY: clean all p2 p3
+
+all: p2 p3
+
+p2: hw1.2.p2a hw1.2.p2b
+
+hw1.2.p2a: hw1.2.p2a.o 
+	${CC} -o hw1.2.p2a hw1.2.p2a.o
+
+hw1.2.p2b: hw1.2.p2b.o
+	${CC} -o hw1.2.p2b hw1.2.p2b.o
+
+hw1.2.p2a.o: hw1.2.p2a.cpp
+	${CC} -c hw1.2.p2a.cpp
+
+hw1.2.p2b.o: hw1.2.p2b.cpp
+	${CC} -c hw1.2.p2b.cpp
+
+p3: hw1.2.p3a hw1.2.p3b hw1.2.p3c
+
+hw1.2.p3a: hw1.2.p3a.o 
+	${CC} -o hw1.2.p3a hw1.2.p3a.o
+
+hw1.2.p3b: hw1.2.p3b.o
+	${CC} -o hw1.2.p3b hw1.2.p3b.o
+
+hw1.2.p3c: hw1.2.p3c.o
+	${CC} -o hw1.2.p3c hw1.2.p3c.o
+
+hw1.2.p3a.o: hw1.2.p3a.cpp
+	${CC} -c hw1.2.p3a.cpp
+
+hw1.2.p3b.o: hw1.2.p3b.cpp
+	${CC} -c hw1.2.p3b.cpp
+
+hw1.2.p3c.o: hw1.2.p3c.cpp
+	${CC} -c hw1.2.p3c.cpp
+
+clean:
+	rm -f hw1.2.p2a hw1.2.p2b hw1.2.p3a hw1.2.p3b hw1.2.p3c *.o

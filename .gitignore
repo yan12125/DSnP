@@ -4,11 +4,15 @@
 *.doc
 *.pdf
 Slides
+# for test c++ or makefile or so
+test
 b00901160*
 
-# hw1.1
+# hw1.2
 hw1.2.p1a
 hw1.2.p1b
+# memory address
+hw1.2.p1b.out
 hw1.2.p2a
 hw1.2.p2b
 hw1.2.p3a
@@ -16,7 +20,7 @@ hw1.2.p3b
 hw1.2.p3c
 hw1.2.p1.bug
 
-#hw1.2
+#hw2
 cmdReader
 testAsc
 cmdReader-ref

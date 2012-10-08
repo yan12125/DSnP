@@ -32,11 +32,11 @@ static string mp = "FCDEVGHIPKLMNOBQRSTUJWXAYZ"; // TODO
 static char xMap(char c)
 {
    // TODO
-   if(c<='z'&&c>='a')
+   if(c>='a'&&c<='z')
    {
       c = c-0x20;
    }
-   if((c<='z'&&c>='a')||(c<='Z'&&c>='A'))
+   if(c>='A'&&c<='Z') // all lowercases has already been translated to uppercase
    {
       c = mp[c-'A'];
    }
@@ -60,7 +60,7 @@ public:
       }
    }
 
-   size_t size() const { return _str.size(); } // TODO
+   size_t size() const { return this->_str.size(); } // TODO
    bool operator < (const xStr& s) const { return this->_str < s._str; } // TODO
    bool operator == (const xStr& s) const { return this->_str == s._str; } // TODO
 
@@ -115,11 +115,12 @@ bool
 Book::operator < (const Book& b) const
 {
    // TODO
+   // seems string has no operator!=
    if(!(this->_author == b._author))
    {
       return this->_author < b._author;
    }
-   else if(this->_year == b._year)
+   else if(this->_year != b._year)
    {
       return this->_year < b._year;
    }
