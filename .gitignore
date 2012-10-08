@@ -1,0 +1,22 @@
+*.o
+*.o.ref*
+*.tgz
+*.doc
+*.pdf
+Slides
+b00901160*
+
+# hw1.1
+hw1.2.p1a
+hw1.2.p1b
+hw1.2.p2a
+hw1.2.p2b
+hw1.2.p3a
+hw1.2.p3b
+hw1.2.p3c
+hw1.2.p1.bug
+
+#hw1.2
+cmdReader
+testAsc
+cmdReader-ref

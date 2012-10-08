@@ -1,0 +1,8 @@
+_hw1.2/hw1.2.p1a.main.cpp
+_hw1.2/hw1.2.p1.bug.cpp
+_hw1.2/*.o
+_hw1.2/hw1.2.p2a
+_hw1.2/hw1.2.p2b
+_hw1.2/hw1.2.p3a
+_hw1.2/hw1.2.p3b
+_hw1.2/hw1.2.p3c

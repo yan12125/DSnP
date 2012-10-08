@@ -1,0 +1,17 @@
+I use gdb to debug:
+    1. include -g when compiling
+    2. gdb hw1.2.p1.bug
+    3. br main
+    4. s (step) until segmentation fault occurs
+It occurred at the line 'p1->assign("I")'
+
+Now I know which line makes the program crash, but I don't know why 
+until I google for malloc() and found this:
+(Copied from http://www.programmer-club.com/showSameTitleN/c/34973.html)
+"4. 因為 new 知道類型, 所以在配置後, new 會呼叫 constructor 來初始化所配置
+的記憶體. malloc() 只管配置. "
+
+I think it's because malloc() didn't make the constructor of string called, 
+so I do some experiment: replacing malloc() with new. Compile again, and 
+everything goes well! The difference between new and malloc() causes the 
+bug, which is in fact hard to find out from debugger!

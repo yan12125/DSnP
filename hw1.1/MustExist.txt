@@ -1,0 +1,8 @@
+_hw1.1/hw1.1.p1.txt
+_hw1.1/hw1.1.p2.log
+_hw1.1/hw1.1.p2a.cmd
+_hw1.1/hw1.1.p2b.cmd
+_hw1.1/hw1.1.p2b.log
+_hw1.1/hw1.1.p3.dat
+_hw1.1/hw1.1.p3.cmd
+_hw1.1/hw1.1.p3.log

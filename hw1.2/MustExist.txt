@@ -1,0 +1,13 @@
+_hw1.2/hw1.2.p1a.h
+_hw1.2/hw1.2.p1a.cpp
+_hw1.2/hw1.2.p1a.out
+_hw1.2/hw1.2.p1b.cpp
+_hw1.2/hw1.2.p1b.main.cpp
+_hw1.2/hw1.2.p1b.out
+_hw1.2/hw1.2.p1d.out
+_hw1.2/Makefile
+_hw1.2/hw1.2.p2a.cpp
+_hw1.2/hw1.2.p2b.cpp
+_hw1.2/hw1.2.p3a.cpp
+_hw1.2/hw1.2.p3b.cpp
+_hw1.2/hw1.2.p3c.cpp

@@ -1,0 +1,7 @@
+_hw2/cmdCharDef.o
+_hw2/cmdReader.o
+_hw2/main.o
+_hw2/testAsc.o
+_hw2/cmdParser.h
+_hw2/cmdReader
+_hw2/testAsc

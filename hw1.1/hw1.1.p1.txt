@@ -1,0 +1,18 @@
+(a) I install on my desktop computer at the dorm, and I 
+    install the ssh server so that I can login to my computer elsewhere.
+(b) It's a dedicated desktop computer with only one normal user. 
+    The disk size is 1TB, and the memory size is 8GB. 
+    The result of `df` contains the device file name, capacity, 
+    usage, and mount point of all currently mounted devices.
+    `du` shows the size of all files (in KB) in the current directory.
+(c) Ubuntu desktop, Verion 12.04.1
+(d) bash. Type ps in a terminal emulator and see the process name other than ps.
+    My home directory: /home/yen
+    The groupss I belong to (`groups`) : yen sudo vboxusers libvirtd wireshark
+(e) g++:  /usr/bin/g++  version 4.6.3
+    make: /usr/bin/make version 3.81
+    gdb:  /usr/bin/gdb  version 7.4
+    ddd:  /usr/bin/ddd  version 3.3.12
+(f) I use gnome-terminal as the terminal emulator, so I can just type the 
+    program name, and windows would show up.
+
