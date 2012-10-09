@@ -92,12 +92,16 @@ enum ParseChar
    // -- MOD keys: 27 -> 91 -> {49-54} -> 126
    //    MOD_KEY = { INSERT, DELETE, HOME, END, PgUp, PgDown }
    //
-   MOD_KEY_FLAG     = 1 << 9,
+   // MOD_KEY_FLAG     = 1 << 9,
+   MOD_KEY_FLAG     = 1 << 8,
    MOD_KEY_INT      = 91,
-   HOME_KEY         = 49 + MOD_KEY_FLAG,
+   MOD_HOME_END_INT = 79, 
+   // HOME_KEY         = 49 + MOD_KEY_FLAG,
+   HOME_KEY         = 72 + MOD_KEY_FLAG, 
    INSERT_KEY       = 50 + MOD_KEY_FLAG,
    DELETE_KEY       = 51 + MOD_KEY_FLAG,
-   END_KEY          = 52 + MOD_KEY_FLAG,
+   // END_KEY          = 52 + MOD_KEY_FLAG,
+   END_KEY          = 70 + MOD_KEY_FLAG, 
    PG_UP_KEY        = 53 + MOD_KEY_FLAG,
    PG_DOWN_KEY      = 54 + MOD_KEY_FLAG,
    MOD_KEY_BEGIN    = HOME_KEY,

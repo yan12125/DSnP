@@ -83,6 +83,7 @@ checkChar(char ch, istream& istr)
       case INPUT_END_KEY:   // Ctrl-d
       case TAB_KEY:         // tab('\t') or Ctrl-i
       case NEWLINE_KEY:     // enter('\n') or ctrl-m
+      case BACK_SPACE_KEY:
          return returnCh(ch);
 
       // TODO... Check and change if necessary!!!!!!
@@ -97,7 +98,57 @@ checkChar(char ch, istream& istr)
       //
       // Combo keys: multiple codes for one key press
       // -- Usually starts with ESC key, so we check the "case ESC"
-      // case ESC_KEY:
+      case ESC_KEY:
+         {
+            //cout << hex << istr.peek() << dec << endl;
+            ParseChar nextkey = ParseChar(mygetc(istr));
+            switch(nextkey)
+            {
+               case MOD_KEY_INT:    // all except backspace, home, end
+                  {
+                     ParseChar nextkey2 = ParseChar(mygetc(istr) + MOD_KEY_FLAG);
+                     switch(nextkey2)
+                     {
+                        case DELETE_KEY:
+                        case INSERT_KEY:
+                        case PG_UP_KEY:
+                        case PG_DOWN_KEY:
+                           if(mygetc(istr)==MOD_KEY_DUMMY) // these four keycodes end with 126
+                           {
+                              return returnCh(nextkey2);
+                           }
+                           else
+                           {
+                              return returnCh(UNDEFINED_KEY);
+                           }
+                        case ARROW_UP_KEY:
+                        case ARROW_DOWN_KEY:
+                        case ARROW_LEFT_KEY:
+                        case ARROW_RIGHT_KEY:
+                           return returnCh(nextkey2);
+                        default:
+                           return returnCh(UNDEFINED_KEY);
+                     }
+                  }
+                  break;
+               case MOD_HOME_END_INT:            // home, end
+                  {
+                     ParseChar nextkey2 = ParseChar(mygetc(istr) + MOD_KEY_FLAG);
+                     switch(nextkey2)
+                     {
+                        case HOME_KEY:
+                        case END_KEY:
+                           return returnCh(nextkey2); // no dummy key
+                        default:
+                           return returnCh(UNDEFINED_KEY);
+                     }
+                  }
+                  break;
+               default:
+                  return returnCh(UNDEFINED_KEY);
+            }
+         }
+         break;
 
       // For the remaining printable and undefined keys
       default:

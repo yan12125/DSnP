@@ -6,10 +6,9 @@ CFLAGS = -g -Wall
 #
 # This is the setting for TA
 #
-CFLAGS = -g -Wall -DTA_KB_SETTING
-CFLAGS = -O3 -DTA_KB_SETTING
-#CFLAGS = -O3 -m32 -DTA_KB_SETTING
-CFLAGS = -O3 -DTA_KB_SETTING
+# CFLAGS = -g -Wall -DTA_KB_SETTING
+# CFLAGS = -O3 -DTA_KB_SETTING
+# CFLAGS = -O3 -m32 -DTA_KB_SETTING
 
 ###############
 # PHONY rules #
