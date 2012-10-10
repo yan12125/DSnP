@@ -1,4 +1,6 @@
 hw1.1 3hr
 hw1.2 1~2 2hr
       3   1.5hr
-
+hw2   read code 1hr
+      testAsc   1hr
+      left, right, home, end, delete 1hr

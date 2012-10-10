@@ -47,15 +47,15 @@ CmdParser::readCmdInt(istream& istr)
          case HOME_KEY       : moveBufPtr(_readBuf); break;
          case LINE_END_KEY   :
          case END_KEY        : moveBufPtr(_readBufEnd); break;
-         case BACK_SPACE_KEY : /* TODO */ break;
+         case BACK_SPACE_KEY : /* TODO */ if(_readBufPtr != _readBuf){ moveBufPtr(_readBufPtr-1); deleteChar(); } break;
          case DELETE_KEY     : deleteChar(); break;
          case NEWLINE_KEY    : addHistory();
                                cout << char(NEWLINE_KEY);
                                printPrompt(); break;
          case ARROW_UP_KEY   : moveToHistory(_historyIdx - 1); break;
          case ARROW_DOWN_KEY : moveToHistory(_historyIdx + 1); break;
-         case ARROW_RIGHT_KEY: /* TODO */ break;
-         case ARROW_LEFT_KEY : /* TODO */ break;
+         case ARROW_RIGHT_KEY: /* TODO */ moveBufPtr(_readBufPtr+1); break;
+         case ARROW_LEFT_KEY : /* TODO */ moveBufPtr(_readBufPtr-1); break;
          case PG_UP_KEY      : moveToHistory(_historyIdx - PG_OFFSET); break;
          case PG_DOWN_KEY    : moveToHistory(_historyIdx + PG_OFFSET); break;
          case TAB_KEY        : /* TODO */ break;
@@ -87,6 +87,19 @@ bool
 CmdParser::moveBufPtr(char* const ptr)
 {
    // TODO...
+   if(ptr > _readBufEnd || ptr < _readBuf)
+   {
+      mybeep();
+      return false;
+   }
+   _readBufPtr = ptr;
+   // update output
+   cout << "\e[0G"; // move to first char of the current line
+   printPrompt();
+   cout << _readBuf;
+   cout << "\e[0K"; // clear after current cursor
+   cout << "\e[" << strlen("cmd> ")+ _readBufPtr - _readBuf + 1 << "G"; // move cursor to specified location
+   cout.flush();
    return true;
 }
 
@@ -114,6 +127,21 @@ bool
 CmdParser::deleteChar()
 {
    // TODO...
+   assert(*_readBufEnd == '\0');
+   if(*_readBuf == '\0' || _readBufPtr == _readBuf + strlen(_readBuf)) // nothing to delete
+   {
+      return false;
+   }
+   for(char* pos = _readBuf;pos <= _readBufEnd;pos++)
+   {
+      if(pos >= _readBufPtr)
+      {
+         *pos = *(pos+1);
+      }
+   }
+   *_readBufEnd = '\0';
+   _readBufEnd--;
+   moveBufPtr(_readBufPtr); // just update the string
    return true;
 }
 
@@ -135,6 +163,18 @@ void
 CmdParser::insertChar(char ch, int rep)
 {
    // TODO...
+   if(_readBufEnd == _readBuf + READ_BUF_SIZE -1 ) // no more space to insert characters
+   {
+      mybeep();
+      return;
+   }
+   for(char* pos = _readBufEnd+1;pos >= _readBufPtr+1;pos--)
+   {
+      *pos = *(pos-1);
+   }
+   *_readBufPtr = ch;
+   _readBufEnd++;
+   moveBufPtr(_readBufPtr+1);
 }
 
 // 1. Delete the line that is currently shown on the screen
@@ -155,6 +195,9 @@ void
 CmdParser::deleteLine()
 {
    // TODO...
+   strcpy(_readBuf, "");
+   _readBufPtr = _readBufEnd = _readBuf;
+   moveBufPtr(_readBuf);
 }
 
 
@@ -201,6 +244,22 @@ void
 CmdParser::addHistory()
 {
    // TODO...
+   char trimmedStr[READ_BUF_SIZE] = "";
+   char* ptrCurChar = trimmedStr;
+   for(char* pos = _readBuf;pos <= _readBufEnd;pos++)
+   {
+      if(*pos == ' ')
+      {
+         continue;
+      }
+      *ptrCurChar = *pos;
+      ptrCurChar++;
+   }
+   if(*_readBuf == '\0') // empty string
+   {
+      return;
+   }
+   deleteLine();
 }
 
 
