@@ -142,7 +142,6 @@ CmdParser::deleteChar()
    *_readBufEnd = '\0';
    _readBufEnd--;
    moveBufPtr(_readBufPtr); // just update the string
-   _tempCmdStored = false;
    return true;
 }
 
@@ -176,7 +175,6 @@ CmdParser::insertChar(char ch, int rep)
    *_readBufPtr = ch;
    _readBufEnd++;
    moveBufPtr(_readBufPtr+1);
-   _tempCmdStored = false;
 }
 
 // 1. Delete the line that is currently shown on the screen
@@ -273,17 +271,17 @@ CmdParser::moveToHistory(int index)
    _historyIdx = index;
    _readBufEnd = _readBuf + strlen(_readBuf);
    moveBufPtr(_readBufEnd);
-   cout << "\e[s\e[40G";
+   cout << "\e[s\e[40G[ ";
    for(unsigned int i=0;i<_history.size();i++)
    {
-      cout << _history[i];
+      cout << "\"" << _history[i] << "\"";
       if(i!=_history.size()-1)
       {
-         cout << " ; ";
+         cout << ", ";
       }
       cout.flush();
    }
-   cout << ";;\e[u";
+   cout << " ]\e[u";
 }
 
 
