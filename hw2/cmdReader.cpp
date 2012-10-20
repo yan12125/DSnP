@@ -142,6 +142,7 @@ CmdParser::deleteChar()
    *_readBufEnd = '\0';
    _readBufEnd--;
    moveBufPtr(_readBufPtr); // just update the string
+   _tempCmdStored = false;
    return true;
 }
 
@@ -175,6 +176,7 @@ CmdParser::insertChar(char ch, int rep)
    *_readBufPtr = ch;
    _readBufEnd++;
    moveBufPtr(_readBufPtr+1);
+   _tempCmdStored = false;
 }
 
 // 1. Delete the line that is currently shown on the screen
@@ -223,6 +225,65 @@ void
 CmdParser::moveToHistory(int index)
 {
    // TODO...
+   assert(index!=_historyIdx);
+   if(_history.size()==0)
+   {
+      mybeep();
+      return;
+   }
+   if((unsigned int) _historyIdx == _history.size() &&
+      (unsigned int) index < _history.size() && 
+      !_tempCmdStored) 
+   {
+      _tempCmdStored = true;
+      _history.push_back(_readBuf);
+   }
+   if((unsigned int) _historyIdx+1 == _history.size() && 
+      (unsigned int) index >= _history.size() && 
+      _tempCmdStored)
+   {
+      strcpy(_readBuf, "");
+      _readBufPtr = _readBufEnd = _readBuf;
+      moveBufPtr(_readBufEnd);
+      _historyIdx++;
+      return;
+   }
+   if((unsigned int) _historyIdx == _history.size() && 
+      (unsigned int) index >= _history.size())
+   {  
+      // already at bottom
+      mybeep();
+      return;
+   }
+   if(_historyIdx == 0 && index < 0)
+   {
+      // already at top
+      mybeep();
+      return;
+   }
+   if((unsigned int)index > _history.size())
+   {
+      index = _history.size();
+   }
+   if(index < 0 )
+   {
+      index = 0;
+   }
+   strcpy(_readBuf, _history[index].c_str());
+   _historyIdx = index;
+   _readBufEnd = _readBuf + strlen(_readBuf);
+   moveBufPtr(_readBufEnd);
+   cout << "\e[s\e[40G";
+   for(unsigned int i=0;i<_history.size();i++)
+   {
+      cout << _history[i];
+      if(i!=_history.size()-1)
+      {
+         cout << " ; ";
+      }
+      cout.flush();
+   }
+   cout << ";;\e[u";
 }
 
 
@@ -245,21 +306,31 @@ CmdParser::addHistory()
 {
    // TODO...
    char trimmedStr[READ_BUF_SIZE] = "";
-   char* ptrCurChar = trimmedStr;
-   for(char* pos = _readBuf;pos <= _readBufEnd;pos++)
-   {
-      if(*pos == ' ')
-      {
-         continue;
-      }
-      *ptrCurChar = *pos;
-      ptrCurChar++;
-   }
-   if(*_readBuf == '\0') // empty string
+   char *pos1 = NULL, *pos2 = NULL;
+   // pos1 will become the pointer to first non blank char, 
+   // and pos2 will become the pointer to last non blank char
+
+   for(pos1 = _readBuf;pos1 <= _readBufEnd-1 && *pos1==' ';pos1++){}
+   if(pos1 == _readBufEnd) // empty string
    {
       return;
    }
-   deleteLine();
+   if(_tempCmdStored)
+   {
+      _history.pop_back();
+   }
+   for(pos2 = _readBufEnd-1;pos2 >= pos1 && *pos2==' ';pos2--){}
+   for(char* pos = pos1;pos <= pos2;pos++)
+   {
+      trimmedStr[pos-pos1] = *pos;
+   }
+   *(pos2+1) = '\0';
+   cout << endl << trimmedStr;
+   _history.push_back(trimmedStr);
+   _historyIdx = _history.size();
+   *_readBuf = '\0';
+   _readBufEnd = _readBufPtr = _readBuf;
+   return;
 }
 
 
