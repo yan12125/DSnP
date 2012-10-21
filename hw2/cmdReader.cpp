@@ -58,7 +58,7 @@ CmdParser::readCmdInt(istream& istr)
          case ARROW_LEFT_KEY : /* TODO */ moveBufPtr(_readBufPtr-1); break;
          case PG_UP_KEY      : moveToHistory(_historyIdx - PG_OFFSET); break;
          case PG_DOWN_KEY    : moveToHistory(_historyIdx + PG_OFFSET); break;
-         case TAB_KEY        : /* TODO */ break;
+         case TAB_KEY        : /* TODO */ insertChar(' ', 8 - (_readBufPtr - _readBuf)%8); break;
          case INSERT_KEY     : // not yet supported; fall through to UNDEFINE
          case UNDEFINED_KEY:   mybeep(); break;
          default:  // printable character
@@ -142,6 +142,12 @@ CmdParser::deleteChar()
    *_readBufEnd = '\0';
    _readBufEnd--;
    moveBufPtr(_readBufPtr); // just update the string
+   if(_tempCmdStored && (unsigned int)_historyIdx+1 == _history.size())
+   {
+      _history.pop_back();
+      _tempCmdStored = false;
+      _historyIdx = _history.size();
+   }
    return true;
 }
 
@@ -168,13 +174,22 @@ CmdParser::insertChar(char ch, int rep)
       mybeep();
       return;
    }
-   for(char* pos = _readBufEnd+1;pos >= _readBufPtr+1;pos--)
+   for(char* pos = _readBufEnd+rep;pos >= _readBufPtr+rep;pos--)
    {
-      *pos = *(pos-1);
+      *pos = *(pos-rep);
    }
-   *_readBufPtr = ch;
-   _readBufEnd++;
-   moveBufPtr(_readBufPtr+1);
+   for(char* pos = _readBufPtr;pos < _readBufPtr+rep;pos++)
+   {
+      *pos = ch;
+   }
+   _readBufEnd+=rep;
+   moveBufPtr(_readBufPtr+rep);
+   if(_tempCmdStored && (unsigned int)_historyIdx+1 == _history.size())
+   {
+      _history.pop_back();
+      _tempCmdStored = false;
+      _historyIdx = _history.size();
+   }
 }
 
 // 1. Delete the line that is currently shown on the screen
@@ -233,18 +248,24 @@ CmdParser::moveToHistory(int index)
       (unsigned int) index < _history.size() && 
       !_tempCmdStored) 
    {
+      // need to save a temp version
       _tempCmdStored = true;
       _history.push_back(_readBuf);
    }
-   if((unsigned int) _historyIdx+1 == _history.size() && 
-      (unsigned int) index >= _history.size() && 
+   if(_historyIdx == 0 && index < 0)
+   {
+      // already at top
+      mybeep();
+      return;
+   }
+   if(index < 0 )
+   {
+      index = 0;
+   }
+   if((unsigned int) index >= _history.size() && 
       _tempCmdStored)
    {
-      strcpy(_readBuf, "");
-      _readBufPtr = _readBufEnd = _readBuf;
-      moveBufPtr(_readBufEnd);
-      _historyIdx++;
-      return;
+      index = _history.size() - 1;
    }
    if((unsigned int) _historyIdx == _history.size() && 
       (unsigned int) index >= _history.size())
@@ -253,19 +274,9 @@ CmdParser::moveToHistory(int index)
       mybeep();
       return;
    }
-   if(_historyIdx == 0 && index < 0)
-   {
-      // already at top
-      mybeep();
-      return;
-   }
    if((unsigned int)index > _history.size())
    {
       index = _history.size();
-   }
-   if(index < 0 )
-   {
-      index = 0;
    }
    strcpy(_readBuf, _history[index].c_str());
    _historyIdx = index;
@@ -279,9 +290,9 @@ CmdParser::moveToHistory(int index)
       {
          cout << ", ";
       }
-      cout.flush();
    }
    cout << " ]\e[u";
+   cout.flush();
 }
 
 
@@ -315,7 +326,9 @@ CmdParser::addHistory()
    }
    if(_tempCmdStored)
    {
+      cout << "\e[s\e[40E_history.pop_back() in addHistory()\e[u";
       _history.pop_back();
+      _tempCmdStored = false;
    }
    for(pos2 = _readBufEnd-1;pos2 >= pos1 && *pos2==' ';pos2--){}
    for(char* pos = pos1;pos <= pos2;pos++)
@@ -323,7 +336,6 @@ CmdParser::addHistory()
       trimmedStr[pos-pos1] = *pos;
    }
    *(pos2+1) = '\0';
-   cout << endl << trimmedStr;
    _history.push_back(trimmedStr);
    _historyIdx = _history.size();
    *_readBuf = '\0';
