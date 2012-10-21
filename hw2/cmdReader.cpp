@@ -7,6 +7,7 @@
 ****************************************************************************/
 #include <cassert>
 #include <cstring>
+#include <sys/ioctl.h>
 #include "cmdParser.h"
 
 using namespace std;
@@ -92,14 +93,40 @@ CmdParser::moveBufPtr(char* const ptr)
       mybeep();
       return false;
    }
-   _readBufPtr = ptr;
-   // update output
-   cout << "\e[0G"; // move to first char of the current line
+   // getting the terminal dimensions
+   // http://stackoverflow.com/questions/1022957/getting-terminal-width-in-c
+   winsize ws;
+   ioctl(0, TIOCGWINSZ, &ws);
+   unsigned int w = ws.ws_col;
+   char prompt[] = "cmd> ";
+   int curOffset = _readBufPtr - _readBuf + strlen(prompt);
+   int curY = curOffset/w;
+   if(curY>0)
+   {
+      cout << "\e[" << curY << "F";
+   }
+   cout << "\e[0G";
    printPrompt();
-   cout << _readBuf;
-   cout << "\e[0K"; // clear after current cursor
-   cout << "\e[" << strlen("cmd> ")+ _readBufPtr - _readBuf + 1 << "G"; // move cursor to specified location
+   cout << _readBuf << " " << "\e[1D\e[0J";
+   int totalOffset = _readBufEnd - _readBuf + strlen(prompt) + 1;
+   int totalY = totalOffset/w, totalX = totalOffset%w;
+   if(totalY>0&&totalX!=0)
+   {
+      cout << "\e[" << totalY << "F";
+   }
+   else if(totalY>1&&totalX==0)
+   {
+      cout << "\e[" << totalY-1 << "F";
+   }
+   int newOffset = ptr - _readBuf + strlen(prompt);
+   int newX = newOffset%w, newY = newOffset/w;
+   if(newY>0)
+   {
+      cout << "\e[" << newY << "E";
+   }
+   cout << "\e[" << newX+1 << "G";
    cout.flush();
+   _readBufPtr = ptr;
    return true;
 }
 
@@ -274,25 +301,14 @@ CmdParser::moveToHistory(int index)
       mybeep();
       return;
    }
-   if((unsigned int)index > _history.size())
+   if((unsigned int)index >= _history.size())
    {
-      index = _history.size();
+      index = _history.size()-1;
    }
    strcpy(_readBuf, _history[index].c_str());
    _historyIdx = index;
    _readBufEnd = _readBuf + strlen(_readBuf);
    moveBufPtr(_readBufEnd);
-   cout << "\e[s\e[40G[ ";
-   for(unsigned int i=0;i<_history.size();i++)
-   {
-      cout << "\"" << _history[i] << "\"";
-      if(i!=_history.size()-1)
-      {
-         cout << ", ";
-      }
-   }
-   cout << " ]\e[u";
-   cout.flush();
 }
 
 
@@ -326,7 +342,6 @@ CmdParser::addHistory()
    }
    if(_tempCmdStored)
    {
-      cout << "\e[s\e[40E_history.pop_back() in addHistory()\e[u";
       _history.pop_back();
       _tempCmdStored = false;
    }
