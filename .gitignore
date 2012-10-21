@@ -8,6 +8,9 @@ Slides
 test
 b00901160*
 
+# vim temporary files
+.*.swp
+
 # hw1.2
 hw1.2.p1a
 hw1.2.p1b
