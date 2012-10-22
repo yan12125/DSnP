@@ -155,6 +155,8 @@ CmdParser::deleteChar()
 {
    // TODO...
    assert(*_readBufEnd == '\0');
+   assert(_history.size()<INT_MAX);
+   int _histSize = (int)_history.size();
    if(*_readBuf == '\0' || _readBufPtr == _readBuf + strlen(_readBuf)) // nothing to delete
    {
       mybeep();
@@ -170,11 +172,11 @@ CmdParser::deleteChar()
    *_readBufEnd = '\0';
    _readBufEnd--;
    moveBufPtr(_readBufPtr); // just update the string
-   if(_tempCmdStored && (unsigned int)_historyIdx+1 == _history.size())
+   if(_tempCmdStored && _historyIdx+1 == _histSize)
    {
       _history.pop_back();
       _tempCmdStored = false;
-      _historyIdx = _history.size();
+      _historyIdx = _histSize;
    }
    return true;
 }
@@ -197,6 +199,8 @@ void
 CmdParser::insertChar(char ch, int rep)
 {
    // TODO...
+   assert(_history.size()<INT_MAX);
+   int _histSize = (int) _history.size();
    if(_readBufEnd == _readBuf + READ_BUF_SIZE -1 ) // no more space to insert characters
    {
       mybeep();
@@ -212,11 +216,11 @@ CmdParser::insertChar(char ch, int rep)
    }
    _readBufEnd+=rep;
    moveBufPtr(_readBufPtr+rep);
-   if(_tempCmdStored && (unsigned int)_historyIdx+1 == _history.size())
+   if(_tempCmdStored && _historyIdx+1 == _histSize)
    {
       _history.pop_back();
       _tempCmdStored = false;
-      _historyIdx = _history.size();
+      _historyIdx = _histSize;
    }
 }
 
@@ -267,14 +271,14 @@ CmdParser::moveToHistory(int index)
 {
    // TODO...
    assert(index!=_historyIdx);
-   if(_history.size()==0)
+   assert(_history.size()<=INT_MAX);
+   int _histSize = (int) _history.size();
+   if(_histSize==0)
    {
       mybeep();
       return;
    }
-   if((unsigned int) _historyIdx == _history.size() &&
-      (unsigned int) index < _history.size() && 
-      !_tempCmdStored) 
+   if(_historyIdx == _histSize && index < _histSize && !_tempCmdStored)
    {
       // need to save a temp version
       _tempCmdStored = true;
@@ -290,21 +294,19 @@ CmdParser::moveToHistory(int index)
    {
       index = 0;
    }
-   if((unsigned int) index >= _history.size() && 
-      _tempCmdStored)
+   if(index >= _histSize && _tempCmdStored)
    {
-      index = _history.size() - 1;
+      index = _histSize - 1;
    }
-   if((unsigned int) _historyIdx == _history.size() && 
-      (unsigned int) index >= _history.size())
+   if( _historyIdx == _histSize && index >= _histSize)
    {  
       // already at bottom
       mybeep();
       return;
    }
-   if((unsigned int)index >= _history.size())
+   if(index >= _histSize)
    {
-      index = _history.size()-1;
+      index = _histSize-1;
    }
    strcpy(_readBuf, _history[index].c_str());
    _historyIdx = index;
@@ -331,6 +333,7 @@ void
 CmdParser::addHistory()
 {
    // TODO...
+   moveBufPtr(_readBufEnd); // for not pressing enter at the last line
    char trimmedStr[READ_BUF_SIZE] = "";
    char *pos1 = NULL, *pos2 = NULL;
    // pos1 will become the pointer to first non blank char, 
