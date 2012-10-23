@@ -42,16 +42,6 @@ public:
    void readCmd();
 
 private:
-   void debug(const string& str)
-   {
-      cout << "\e[s\e[1,20f";
-      cout << str;
-      cout << "\e[u";
-   }
-   void debug(int i)
-   {
-      
-   }
    // Private member functions
    void resetBufAndPrintPrompt() {
         _readBufPtr = _readBufEnd = _readBuf;
