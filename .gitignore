@@ -32,6 +32,8 @@ cmdReader-ref
 bin
 lib
 ref
+.depend.mak
+tags
 
 #hw3
 dofiles
