@@ -15,6 +15,17 @@ bool
 initCalcCmd()
 {
    // TODO...
+   if(!(cmdMgr->regCmd("MSET", 4, new MsetCmd) &&
+        cmdMgr->regCmd("MVARiable", 4, new MvarCmd) &&
+        cmdMgr->regCmd("MADD", 4, new MaddCmd) &&
+        cmdMgr->regCmd("MSUBtract", 4, new MsubCmd) &&
+        cmdMgr->regCmd("MMultiply", 5, new MmultCmd) &&
+        cmdMgr->regCmd("MCMPare", 5, new McmpCmd) &&
+        cmdMgr->regCmd("MPrint", 2, new MprintCmd)))
+   {
+      cerr << "Registering \"initCalc\" commands fails... exiting" << endl;
+      return false;
+   }
    return true;
 }
 
@@ -104,7 +115,27 @@ CmdExecStatus
 MaddCmd::exec(const string& option)
 {
    // TODO...
+   vector<string> options;
+   if(!CmdExec::lexOptions(option, options, 3))
+   {
+      return CMD_EXEC_ERROR;
+   }
 
+   ModNum dest;
+   if(!ModNum::getVarVal(options[0], dest))
+   {
+      return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
+   }
+   ModNum oprand[2];
+   for(int i=0;i<2;i++)
+   {
+      if(!(ModNum::getStrVal(options[i+1], oprand[i])))
+      {
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i+1]);
+      }
+   }
+
+   dest = oprand[0]+oprand[1];
    return CMD_EXEC_DONE;
 }
 
@@ -131,7 +162,27 @@ CmdExecStatus
 MsubCmd::exec(const string& option)
 {
    // TODO...
+   vector<string> options;
+   if(!CmdExec::lexOptions(option, options, 3))
+   {
+      return CMD_EXEC_ERROR;
+   }
 
+   ModNum dest;
+   if(!ModNum::getVarVal(options[0], dest))
+   {
+      return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
+   }
+   ModNum oprand[2];
+   for(int i=0;i<2;i++)
+   {
+      if(!(ModNum::getStrVal(options[i+1], oprand[i])))
+      {
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i+1]);
+      }
+   }
+
+   dest = oprand[0]-oprand[1];
    return CMD_EXEC_DONE;
 }
 
@@ -158,7 +209,27 @@ CmdExecStatus
 MmultCmd::exec(const string& option)
 {
    // TODO...
-   
+   vector<string> options;
+   if(!CmdExec::lexOptions(option, options, 3))
+   {
+      return CMD_EXEC_ERROR;
+   }
+
+   ModNum dest;
+   if(!ModNum::getVarVal(options[0], dest))
+   {
+      return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
+   }
+   ModNum oprand[2];
+   for(int i=0;i<2;i++)
+   {
+      if(!(ModNum::getStrVal(options[i+1], oprand[i])))
+      {
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i+1]);
+      }
+   }
+
+   dest = oprand[0]*oprand[1];
    return CMD_EXEC_DONE;
 }
 
@@ -185,6 +256,31 @@ CmdExecStatus
 McmpCmd::exec(const string& option)
 {
    // TODO...
+   vector<string> options;
+   if(!CmdExec::lexOptions(option, options, 2))
+   {
+      return CMD_EXEC_ERROR;
+   }
+
+   ModNum oprand[2];
+   for(int i=0;i<2;i++)
+   {
+      if(!(ModNum::getStrVal(options[i], oprand[i])))
+      {
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i]);
+      }
+   }
+
+   cout << oprand[0];
+   if(oprand[0]==oprand[1])
+   {
+      cout << " == ";
+   }
+   else
+   {
+      cout << " != ";
+   }
+   cout << oprand[1];
 
    return CMD_EXEC_DONE;
 }

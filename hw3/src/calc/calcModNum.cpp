@@ -12,9 +12,11 @@
 // TODO: Initialize the static data members of class ModNum
 //       (Note: let default _modulus = 100000000)
 // TODO: Define the member functions of class ModNum
+int ModNum::_modulus = 100000000;
 
 ostream& operator << (ostream& os, const ModNum& n)
 {
+   os << n._num;
    return os;
 }
 

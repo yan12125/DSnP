@@ -9,6 +9,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <algorithm>
+#include <sstream>
 #include "util.h"
 #include "cmdParser.h"
 
@@ -36,6 +38,10 @@ CmdParser::openDofile(const string& dof)
 {
    // TODO...
    _dofile = new ifstream(dof.c_str());
+   if(_dofile->fail())
+   {
+      return false;
+   }
    return _dofile;
 }
 
@@ -45,6 +51,7 @@ CmdParser::closeDofile()
 {
    assert(_dofile != 0);
    // TODO...
+   _dofile->close();
    delete _dofile;
 }
 
@@ -104,6 +111,10 @@ void
 CmdParser::printHelps() const
 {
    // TODO...
+   for(CmdMap::iterator it;it!=_cmdMap.end();it++)
+   {
+      it->second->help();
+   }
 }
 
 void
@@ -146,6 +157,29 @@ CmdParser::parseCmd(string& option)
 
    // TODO...
    assert(str[0] != 0 && str[0] != ' ');
+   CmdExec* e=NULL;
+   stringstream iss(str);
+   string cmd;
+   iss >> cmd;
+   e=getCmd(cmd);
+   if(e==NULL)
+   {
+      cout << "Illegal command!! (" << cmd << ")" << endl;
+   }
+   else
+   {
+      // get the remaining part
+      // http://www.velocityreviews.com/forums/t639320-simple-stringstream-question.html
+      if(iss.tellg()>=str.size()) // no options
+      {
+         option = "";
+      }
+      else
+      {
+         option = iss.str().substr(iss.tellg());
+      }
+      return e;
+   }
    return NULL;
 }
 
@@ -233,6 +267,20 @@ CmdParser::getCmd(string cmd)
    CmdExec* e = 0;
    // TODO...
    // call CmdExec::checkOptCmd(const string&) if needed...
+   // http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
+   string upperCmdReq(cmd);
+   for(string::iterator it=upperCmdReq.begin();it!=upperCmdReq.end();it++)
+   {
+      *it = toupper(*it);
+   }
+   for(CmdMap::iterator it=_cmdMap.begin();it!=_cmdMap.end();it++)
+   {
+      if((upperCmdReq.compare(0, it->first.size(), it->first)==0)&&(it->second->checkOptCmd(upperCmdReq.substr(it->first.size(), string::npos))))
+      {
+         e = it->second;
+         break;
+      }
+   }
    return e;
 }
 
@@ -323,5 +371,14 @@ bool
 CmdExec::checkOptCmd(const string& check) const
 {
    // TODO...
-   return true;
+   string upperCheck;
+   transform(check.begin(), check.end(), upperCheck.begin(), ::toupper);
+   if(_optCmd.find(upperCheck)==0) // check must be the first few chars in _optCmd
+   {
+      return true;
+   }
+   else
+   {
+      return false;
+   }
 }
