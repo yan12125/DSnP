@@ -1,0 +1,16 @@
+_hw3/src/Makefile.in
+_hw3/bin/modCalc
+_hw3/bin/testMC
+_hw3/ref/modCalc-64
+_hw3/ref/modCalc-32
+_hw3/ref/testMC-64
+_hw3/ref/testMC-32
+_hw3/src/calc/calcCmd.o
+_hw3/src/calc/calcModNum.o
+_hw3/src/cmd/cmdCharDef.o
+_hw3/src/cmd/cmdCommon.o
+_hw3/src/cmd/cmdParser.o
+_hw3/src/main/main.o
+_hw3/src/test/test.o
+_hw3/src/util/myGetChar.o
+_hw3/src/util/myString.o

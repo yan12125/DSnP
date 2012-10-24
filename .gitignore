@@ -27,3 +27,14 @@ hw1.2.p1.bug
 cmdReader
 testAsc
 cmdReader-ref
+
+#common folders since hw3
+bin
+lib
+ref
+
+#hw3
+dofiles
+modCalc
+testMC
+
