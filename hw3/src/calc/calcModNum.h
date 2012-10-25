@@ -24,7 +24,7 @@ public:
    // Default constructor
    // ==> Make sure _num is within [0, _modulus)
    // TODO: Implement the default constructor;
-   ModNum(int i = 0){}
+   ModNum(int i = 0);
    // Get the ModNum from the _varMap based on the string "str".
    // If found, copy the value.
    // If not found, create a default one and insert to the _varMap.
@@ -33,15 +33,15 @@ public:
    // Operator overload
    // TODO: overload the following operators (+, +=, -, -=, *, *=, ==, !=, =)
    //
-   ModNum operator + (const ModNum& n) const { return 0; }
-   ModNum& operator += (const ModNum& n) { return (*this); }
-   ModNum operator - (const ModNum& n) const { return 0; }
-   ModNum& operator -= (const ModNum& n) { return (*this); }
-   ModNum operator * (const ModNum& n) const { return 0; }
-   ModNum& operator *= (const ModNum& n) { return (*this); }
-   bool operator == (const ModNum& n) const { return true; }
-   bool operator != (const ModNum& n) const { return true; }
-   ModNum& operator = (const ModNum& n) { return (*this); }
+   ModNum operator + (const ModNum& n) const;
+   ModNum& operator += (const ModNum& n);
+   ModNum operator - (const ModNum& n) const;
+   ModNum& operator -= (const ModNum& n);
+   ModNum operator * (const ModNum& n) const;
+   ModNum& operator *= (const ModNum& n);
+   bool operator == (const ModNum& n) const;
+   bool operator != (const ModNum& n) const;
+   ModNum& operator = (const ModNum& n);
 
    // static methods
    static void setModulus(int m) { _modulus = m; }
@@ -49,17 +49,17 @@ public:
    //
    // [TODO] Set the variable 's' in the _varMap to value 'n',
    // no matter the variable 's' exists in _varMap or not
-   static void setVarVal(const string& s, const ModNum& n) { }
+   static void setVarVal(const string& s, const ModNum& n);
    //
    // [TODO] Get the value of variable 's'.
    // If 's' can be found, store the value in 'n' and return true.
    // Otherwise ('s' not found), return false.
-   static bool getVarVal(const string& s, ModNum& n) { return true; }
+   static bool getVarVal(const string& s, ModNum& n);
    //
    // [TODO] If 's' is a valid variable name, return "getVarVal(s, n)";
    // else if 's' is a number, convert it to ModNum (e.g. by "myStr2Int") and
    // assign to 'n'
-   static bool getStrVal(const string& s, ModNum& n) { return true; }
+   static bool getStrVal(const string& s, ModNum& n);
    //
    // [TODO] Print out all the variables in _varMap, one variable per line,
    // in the following format ---

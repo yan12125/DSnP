@@ -121,11 +121,6 @@ MaddCmd::exec(const string& option)
       return CMD_EXEC_ERROR;
    }
 
-   ModNum dest;
-   if(!ModNum::getVarVal(options[0], dest))
-   {
-      return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
-   }
    ModNum oprand[2];
    for(int i=0;i<2;i++)
    {
@@ -135,7 +130,9 @@ MaddCmd::exec(const string& option)
       }
    }
 
-   dest = oprand[0]+oprand[1];
+   ModNum dest = oprand[0] + oprand[1];
+   ModNum::setVarVal(options[0], dest);
+   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " + " << oprand[1];
    return CMD_EXEC_DONE;
 }
 
@@ -168,11 +165,6 @@ MsubCmd::exec(const string& option)
       return CMD_EXEC_ERROR;
    }
 
-   ModNum dest;
-   if(!ModNum::getVarVal(options[0], dest))
-   {
-      return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
-   }
    ModNum oprand[2];
    for(int i=0;i<2;i++)
    {
@@ -182,7 +174,9 @@ MsubCmd::exec(const string& option)
       }
    }
 
-   dest = oprand[0]-oprand[1];
+   ModNum dest = oprand[0] - oprand[1];
+   ModNum::setVarVal(options[0], dest);
+   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " - " << oprand[1];
    return CMD_EXEC_DONE;
 }
 
@@ -215,11 +209,6 @@ MmultCmd::exec(const string& option)
       return CMD_EXEC_ERROR;
    }
 
-   ModNum dest;
-   if(!ModNum::getVarVal(options[0], dest))
-   {
-      return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
-   }
    ModNum oprand[2];
    for(int i=0;i<2;i++)
    {
@@ -229,7 +218,9 @@ MmultCmd::exec(const string& option)
       }
    }
 
-   dest = oprand[0]*oprand[1];
+   ModNum dest = oprand[0] * oprand[1];
+   ModNum::setVarVal(options[0], dest);
+   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " * " << oprand[1];
    return CMD_EXEC_DONE;
 }
 

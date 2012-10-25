@@ -13,6 +13,7 @@
 //       (Note: let default _modulus = 100000000)
 // TODO: Define the member functions of class ModNum
 int ModNum::_modulus = 100000000;
+CalcMap ModNum::_varMap;
 
 ostream& operator << (ostream& os, const ModNum& n)
 {
@@ -20,3 +21,98 @@ ostream& operator << (ostream& os, const ModNum& n)
    return os;
 }
 
+ModNum::ModNum(int i)
+{
+   _num = i % _modulus;
+}
+
+ModNum ModNum::operator + (const ModNum& n) const 
+{
+   return ModNum(this->_num + n._num);
+}
+
+ModNum& ModNum::operator += (const ModNum& n) 
+{
+   this->_num += n._num;
+   return *this;
+}
+
+ModNum ModNum::operator - (const ModNum& n) const 
+{
+   return ModNum(this->_num - n._num);
+}
+
+ModNum& ModNum::operator -= (const ModNum& n) 
+{
+   this->_num -= n._num;
+   return *this;
+}
+
+ModNum ModNum::operator * (const ModNum& n) const 
+{
+   return ModNum(this->_num * n._num);
+}
+
+ModNum& ModNum::operator *= (const ModNum& n) 
+{
+   this->_num *= n._num;
+   return *this;
+}
+
+bool ModNum::operator == (const ModNum& n) const 
+{
+   return (this->_num == n._num);
+}
+
+bool ModNum::operator != (const ModNum& n) const 
+{
+   return (this->_num != n._num);
+}
+
+ModNum& ModNum::operator = (const ModNum& n) 
+{
+   this->_num = n._num;
+   return *this;
+}
+
+void ModNum::setVarVal(const string& s, const ModNum& n)
+{
+   _varMap[s]._num = n._num;
+}
+
+bool ModNum::getVarVal(const string& s, ModNum& n)
+{
+   bool retval = false;
+   if(_varMap.find(s)!=_varMap.end()) // found
+   {
+      n._num = _varMap[s]._num;
+      retval = true;
+   }
+   else // not found
+   {
+      retval = false;
+   }
+   return retval;
+}
+
+
+bool ModNum::getStrVal(const string& s, ModNum& n)
+{
+   if(isValidVarName(s)) // it's a variable name
+   {
+      return getVarVal(s, n);
+   }
+   else
+   {
+      int value = 0;
+      if(myStr2Int(s, value)) // it's a number
+      {
+         n._num = value;
+         return true;
+      }
+      else // neither (invalid input)
+      {
+         return false;
+      }
+   }
+}

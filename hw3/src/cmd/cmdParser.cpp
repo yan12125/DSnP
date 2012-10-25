@@ -170,7 +170,7 @@ CmdParser::parseCmd(string& option)
    {
       // get the remaining part
       // http://www.velocityreviews.com/forums/t639320-simple-stringstream-question.html
-      if(iss.tellg()>=str.size()) // no options
+      if(static_cast<unsigned long>(iss.tellg())>=str.size()) // no options
       {
          option = "";
       }
@@ -247,6 +247,100 @@ void
 CmdParser::listCmd(const string& str)
 {
    // TODO...
+   string keyword; // string before cursor
+   keyword = _readBuf;
+   transform(keyword.begin(), keyword.end(), keyword.begin(), ::toupper);
+   keyword = keyword.substr(0, _readBufPtr - _readBuf); // extract part before cursor
+   size_t pos = keyword.find_first_not_of(' ');
+   if(pos==string::npos) // blank
+   {
+      int i = 0;
+      cout << endl;
+      for(CmdMap::iterator it = _cmdMap.begin();it != _cmdMap.end();it++)
+      {
+         // manipulator only affect one output
+         cout << setw(12) << left << string(it->first)+string(it->second->getOptCmd());
+         if(i%5==4)
+         {
+            cout << endl;
+         }
+         i++;
+      }
+      reprintCmd();
+      return; // for reducing indent level
+   }
+
+   size_t pos2 = keyword.find_first_of(' '); // first word is in interval [ pos, pos2 ]
+   keyword = keyword.substr(pos, pos2 - pos); // extract first word
+
+   if(pos2 >= static_cast<unsigned int>(_readBufPtr-_readBuf)) // at first word
+   {
+      // start to find all matches
+      vector<string> matchedCmds;
+      for(CmdMap::iterator it = _cmdMap.begin();it!=_cmdMap.end();it++)
+      {
+         bool match = false;
+         if(it->first.find(keyword)==0)  // match if mnemonic code starts with keyword
+         {
+            match = true;
+         }
+         if(keyword.find(it->first)==0)
+         {
+            if(it->second->checkOptCmd(keyword.substr(it->first.size())))
+            {
+               // or ( keyword starts with it->first and optional cmd matches )
+               match = true;
+            }
+         }
+         if(match)
+         {
+            matchedCmds.push_back(string(it->first)+string(it->second->getOptCmd()));
+         }
+      }
+      if(matchedCmds.size()==0)
+      {
+         mybeep();
+         return;
+      }
+      else if(matchedCmds.size()==1)
+      {
+         // print the remaining part
+         for(size_t ptr = keyword.size();ptr!=matchedCmds[0].size();ptr++)
+         {
+            insertChar(matchedCmds[0][ptr]);
+         }
+         insertChar(' '); // for next argument
+      }
+      else // multiple matches
+      {
+         int i=0;
+         cout << endl;
+         for(vector<string>::iterator it = matchedCmds.begin();it!=matchedCmds.end();it++)
+         {
+            cout << setw(12) << left << *it;
+            if(i%5==4)
+            {
+               cout << endl;
+            }
+            i++;
+         }
+         reprintCmd();
+      }
+   }
+   else
+   {
+      CmdExec* e;
+      if((e=getCmd(keyword))!=NULL) // first word match a command
+      {
+         cout << endl;
+         e->help();
+         reprintCmd();
+      }
+      else // first word isn't a command
+      {
+         mybeep();
+      }
+   }
 }
 
 // cmd is a copy of the original input
@@ -268,14 +362,11 @@ CmdParser::getCmd(string cmd)
    // TODO...
    // call CmdExec::checkOptCmd(const string&) if needed...
    // http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
-   string upperCmdReq(cmd);
-   for(string::iterator it=upperCmdReq.begin();it!=upperCmdReq.end();it++)
-   {
-      *it = toupper(*it);
-   }
+   transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
    for(CmdMap::iterator it=_cmdMap.begin();it!=_cmdMap.end();it++)
    {
-      if((upperCmdReq.compare(0, it->first.size(), it->first)==0)&&(it->second->checkOptCmd(upperCmdReq.substr(it->first.size(), string::npos))))
+       // cmd starts with it->first
+      if(cmd.find(it->first)==0 && it->second->checkOptCmd(cmd.substr(it->first.size())))
       {
          e = it->second;
          break;
@@ -371,9 +462,11 @@ bool
 CmdExec::checkOptCmd(const string& check) const
 {
    // TODO...
-   string upperCheck;
+   string upperCheck(check); // transform wouldn't allocate memory
+   string upperOptCmd(_optCmd);
    transform(check.begin(), check.end(), upperCheck.begin(), ::toupper);
-   if(_optCmd.find(upperCheck)==0) // check must be the first few chars in _optCmd
+   transform(_optCmd.begin(), _optCmd.end(), upperOptCmd.begin(), ::toupper);
+   if(upperOptCmd.find(upperCheck)==0) // check must be the first few chars in _optCmd
    {
       return true;
    }
