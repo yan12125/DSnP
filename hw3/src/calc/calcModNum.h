@@ -66,8 +66,8 @@ public:
    // a = 9
    // b = 10
    // kkk = 18
-   static void printVars() {}
-   static void resetVapMap() {}
+   static void printVars();
+   static void resetVapMap();
 
    // friend functions
    friend ostream& operator << (ostream&, const ModNum&);  // TODO

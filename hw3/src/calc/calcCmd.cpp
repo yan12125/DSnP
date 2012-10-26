@@ -20,7 +20,7 @@ initCalcCmd()
         cmdMgr->regCmd("MADD", 4, new MaddCmd) &&
         cmdMgr->regCmd("MSUBtract", 4, new MsubCmd) &&
         cmdMgr->regCmd("MMultiply", 5, new MmultCmd) &&
-        cmdMgr->regCmd("MCMPare", 5, new McmpCmd) &&
+        cmdMgr->regCmd("MCOMPare", 5, new McmpCmd) &&
         cmdMgr->regCmd("MPrint", 2, new MprintCmd)))
    {
       cerr << "Registering \"initCalc\" commands fails... exiting" << endl;

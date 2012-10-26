@@ -37,11 +37,51 @@ bool
 CmdParser::openDofile(const string& dof)
 {
    // TODO...
+   if(_dofileStack.size()>=1000)
+   {
+      cout << "Stack Overflow!" << endl;
+      return false;
+   }
+   _dofileStack.push(_dofile);
    _dofile = new ifstream(dof.c_str());
    if(_dofile->fail())
    {
+      delete _dofile;
+      _dofile = NULL;
+      _dofile = _dofileStack.top();
+      _dofileStack.pop();
       return false;
    }
+   CmdExecStatus status;
+   string buf, option;
+   CmdExec* e = NULL;
+   while(true)
+   {
+      getline(*_dofile, buf);
+      if(_dofile->eof())
+      {
+         break;
+      }
+      deleteLine();
+      reprintCmd();
+      for(string::iterator it=buf.begin();it!=buf.end();it++)
+      {
+         insertChar(*it);
+      }
+      cout << endl;
+      addHistory();
+      e = parseCmd(option);
+      if(e!=NULL)
+      {
+         status = e->exec(option);
+         if(status == CMD_EXEC_QUIT)
+         {
+            cout << endl;
+            exit(0); // maybe there is a better way...
+            break;
+         }
+      }
+   };
    return _dofile;
 }
 
@@ -49,10 +89,18 @@ CmdParser::openDofile(const string& dof)
 void
 CmdParser::closeDofile()
 {
-   assert(_dofile != 0);
    // TODO...
-   _dofile->close();
-   delete _dofile;
+   if(_dofile!=NULL)
+   {
+      if(_dofile->is_open())
+      {
+         _dofile->close();
+         delete _dofile;
+         _dofile = NULL; // execOneCmd determine whether a file is open by this pointer
+         _dofile = _dofileStack.top();
+         _dofileStack.pop();
+      }
+   }
 }
 
 // Return false if registration fails
@@ -111,7 +159,7 @@ void
 CmdParser::printHelps() const
 {
    // TODO...
-   for(CmdMap::iterator it;it!=_cmdMap.end();it++)
+   for(CmdMap::const_iterator it=_cmdMap.begin();it!=_cmdMap.end();it++)
    {
       it->second->help();
    }

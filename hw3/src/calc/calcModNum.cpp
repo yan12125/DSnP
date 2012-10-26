@@ -24,6 +24,10 @@ ostream& operator << (ostream& os, const ModNum& n)
 ModNum::ModNum(int i)
 {
    _num = i % _modulus;
+   if(_num<0) // in c++, negative gives out negative remaining
+   {
+      _num += _modulus;
+   }
 }
 
 ModNum ModNum::operator + (const ModNum& n) const 
@@ -107,7 +111,11 @@ bool ModNum::getStrVal(const string& s, ModNum& n)
       int value = 0;
       if(myStr2Int(s, value)) // it's a number
       {
-         n._num = value;
+         n._num = value % _modulus;
+         if(n._num<0)
+         {
+            n._num += _modulus;
+         }
          return true;
       }
       else // neither (invalid input)
@@ -116,3 +124,18 @@ bool ModNum::getStrVal(const string& s, ModNum& n)
       }
    }
 }
+
+
+void ModNum::printVars()
+{
+   for(CalcMap::iterator it = _varMap.begin();it!=_varMap.end();it++)
+   {
+      cout << it->first << " = " << it->second << endl;
+   }
+}
+
+void ModNum::resetVapMap()
+{
+   _varMap.clear();
+}
+
