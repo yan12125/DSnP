@@ -37,7 +37,11 @@ ModNum ModNum::operator + (const ModNum& n) const
 
 ModNum& ModNum::operator += (const ModNum& n) 
 {
-   this->_num += n._num;
+   this->_num = (this->_num + n._num)%_modulus;
+   if(this->_num<0)
+   {
+      this->_num += _modulus;
+   }
    return *this;
 }
 
@@ -48,7 +52,11 @@ ModNum ModNum::operator - (const ModNum& n) const
 
 ModNum& ModNum::operator -= (const ModNum& n) 
 {
-   this->_num -= n._num;
+   this->_num = (this->_num - n._num)%_modulus;
+   if(this->_num<0)
+   {
+      this->_num += _modulus;
+   }
    return *this;
 }
 
@@ -59,7 +67,11 @@ ModNum ModNum::operator * (const ModNum& n) const
 
 ModNum& ModNum::operator *= (const ModNum& n) 
 {
-   this->_num *= n._num;
+   this->_num = (this->_num * n._num)%_modulus;
+   if(this->_num<0)
+   {
+      this->_num += _modulus;
+   }
    return *this;
 }
 

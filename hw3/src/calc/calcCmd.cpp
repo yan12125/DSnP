@@ -19,7 +19,7 @@ initCalcCmd()
         cmdMgr->regCmd("MVARiable", 4, new MvarCmd) &&
         cmdMgr->regCmd("MADD", 4, new MaddCmd) &&
         cmdMgr->regCmd("MSUBtract", 4, new MsubCmd) &&
-        cmdMgr->regCmd("MMultiply", 5, new MmultCmd) &&
+        cmdMgr->regCmd("MMULTiply", 5, new MmultCmd) &&
         cmdMgr->regCmd("MCOMPare", 5, new McmpCmd) &&
         cmdMgr->regCmd("MPrint", 2, new MprintCmd)))
    {

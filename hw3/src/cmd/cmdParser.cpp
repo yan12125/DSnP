@@ -37,9 +37,8 @@ bool
 CmdParser::openDofile(const string& dof)
 {
    // TODO...
-   if(_dofileStack.size()>=1000)
+   if(_dofileStack.size()>=1021) // 1021 is from the result of ref/modCalc-64
    {
-      cout << "Stack Overflow!" << endl;
       return false;
    }
    _dofileStack.push(_dofile);
