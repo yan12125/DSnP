@@ -52,36 +52,6 @@ CmdParser::openDofile(const string& dof)
       _dofileStack.pop();
       return false;
    }
-   CmdExecStatus status;
-   string buf, option;
-   CmdExec* e = NULL;
-   while(true)
-   {
-      getline(*_dofile, buf);
-      if(_dofile->eof())
-      {
-         break;
-      }
-      deleteLine();
-      reprintCmd();
-      for(string::iterator it=buf.begin();it!=buf.end();it++)
-      {
-         insertChar(*it);
-      }
-      cout << endl;
-      addHistory();
-      e = parseCmd(option);
-      if(e!=NULL)
-      {
-         status = e->exec(option);
-         if(status == CMD_EXEC_QUIT)
-         {
-            cout << endl;
-            exit(0); // maybe there is a better way...
-            break;
-         }
-      }
-   };
    return _dofile;
 }
 

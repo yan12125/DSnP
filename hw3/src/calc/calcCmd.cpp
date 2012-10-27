@@ -132,7 +132,7 @@ MaddCmd::exec(const string& option)
 
    ModNum dest = oprand[0] + oprand[1];
    ModNum::setVarVal(options[0], dest);
-   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " + " << oprand[1];
+   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " + " << oprand[1] << endl;
    return CMD_EXEC_DONE;
 }
 
@@ -176,7 +176,7 @@ MsubCmd::exec(const string& option)
 
    ModNum dest = oprand[0] - oprand[1];
    ModNum::setVarVal(options[0], dest);
-   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " - " << oprand[1];
+   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " - " << oprand[1] << endl;
    return CMD_EXEC_DONE;
 }
 
@@ -220,7 +220,7 @@ MmultCmd::exec(const string& option)
 
    ModNum dest = oprand[0] * oprand[1];
    ModNum::setVarVal(options[0], dest);
-   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " * " << oprand[1];
+   cout << options[0] << "(" << dest << ")" << " = " << oprand[0] << " * " << oprand[1] << endl;
    return CMD_EXEC_DONE;
 }
 
@@ -271,7 +271,7 @@ McmpCmd::exec(const string& option)
    {
       cout << " != ";
    }
-   cout << oprand[1];
+   cout << oprand[1] << endl;
 
    return CMD_EXEC_DONE;
 }
