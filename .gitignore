@@ -39,4 +39,6 @@ tags
 dofiles
 modCalc
 testMC
+# dofile generator made by stmharry
+cmdGenerator
 
