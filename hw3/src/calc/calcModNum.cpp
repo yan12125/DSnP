@@ -6,6 +6,7 @@
   Copyright    [ Copyleft(c) 2007-2012 LaDs(III), GIEE, NTU, Taiwan ]
 ****************************************************************************/
 #include <iostream>
+#include <sstream>
 #include "util.h"
 #include "calcModNum.h"
 
@@ -120,8 +121,10 @@ bool ModNum::getStrVal(const string& s, ModNum& n)
    }
    else
    {
-      int value = 0;
-      if(myStr2Int(s, value)) // it's a number
+      long value = 0;
+      stringstream ss(s);
+      ss >> value;
+      if(!ss.fail() && !ss.bad() && ss.eof()) // it's a number (check eof() is needed. eg. 4a3 will give 4)
       {
          n._num = value % _modulus;
          if(n._num<0)
