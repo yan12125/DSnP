@@ -33,6 +33,7 @@ bin
 lib
 ref
 .depend.mak
+.extheader.mak
 tags
 
 #hw3
@@ -42,3 +43,7 @@ testMC
 # dofile generator made by stmharry
 cmdGenerator
 
+#hw4
+memTest
+memTest.debug
+tests

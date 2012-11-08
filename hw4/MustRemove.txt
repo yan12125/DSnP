@@ -1,0 +1,7 @@
+_hw4/Makefile
+_hw4/src/Makefile.in
+_hw4/src/cmd
+_hw4/bin/memTest
+_hw4/bin/memTest.debug
+_hw4/ref
+_hw4/tests
