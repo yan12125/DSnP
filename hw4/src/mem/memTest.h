@@ -32,9 +32,9 @@ public:
    ~MemTestObj() {}
 
 private:
-   // sizeof(memTestObj) = 34 --> 36
-   int   _dataI[8];
-   char  _dataC[2];
+   // sizeof(memTestObj) = 27 --> 28
+   int   _dataI[6];
+   char  _dataC[3];
 };
 
 
@@ -56,20 +56,32 @@ public:
    // Allocate "n" number of MemTestObj elements
    void newObjs(size_t n) {
       // TODO
+      for(size_t i=0;i<n;i++)
+      {
+         _objList.push_back(new MemTestObj);
+      }
    }
    // Allocate "n" number of MemTestObj arrays with size "s"
    void newArrs(size_t n, size_t s) {
       // TODO
+      for(size_t i=0;i<n;i++)
+      {
+         _arrList.push_back(new MemTestObj[s]);
+      }
    }
    // Delete the object with position idx in _objList[]
    void deleteObj(size_t idx) {
       assert(idx < _objList.size());
       // TODO
+      delete _objList[idx];
+      _objList[idx] = NULL;
    }
    // Delete the array with position idx in _arrList[]
    void deleteArr(size_t idx) {
       assert(idx < _arrList.size());
       // TODO
+      delete [] _arrList[idx];
+      _arrList[idx] = NULL;
    }
 
    void print() const {

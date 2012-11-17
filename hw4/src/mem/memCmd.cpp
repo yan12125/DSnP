@@ -7,6 +7,8 @@
 ****************************************************************************/
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
+#include <sstream>
 #include "memCmd.h"
 #include "memTest.h"
 #include "cmdParser.h"
@@ -79,7 +81,73 @@ CmdExecStatus
 MTNewCmd::exec(const string& option)
 {
    // TODO
-
+   vector<string> tokens;
+   size_t arraySize = 0;
+   size_t nObjs = 0;
+   if (!CmdExec::lexOptions(option, tokens, 0))
+      return CMD_EXEC_ERROR;
+   if(tokens.size() == 0)
+   {
+      return CmdExec::errorOption(CMD_OPT_MISSING, "");
+   }
+   vector<string> availParams;
+   availParams.push_back("-ARRAY");
+   for(unsigned int i=0;i<tokens.size();)
+   {
+      int value = -1;
+      int status = parseParam(tokens, availParams, i, value);
+      switch(status)
+      {
+      case -1:
+         return CmdExec::errorOption(CMD_OPT_MISSING, tokens[i]);
+      case -2:
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
+      case 0:
+         if(arraySize >= 1) // has been set
+         {
+            return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+         }
+         if(value >= 1)
+         {
+            arraySize = value;
+            i += 2;
+            continue;
+         }
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
+      case -3:
+         stringstream ss(tokens[i]);
+         ss >> value;
+         if(!ss.bad() && !ss.fail() && ss.eof() && value >= 1)
+         {
+            if(nObjs >= 1)
+            {
+               return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+            }
+            nObjs = value;
+            i++;
+            continue;
+         }
+         else
+         {
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
+         }
+      }
+   }
+   try
+   {
+      if(arraySize >= 1)
+      {
+         mtest.newArrs(nObjs, arraySize);
+      }
+      else
+      {
+         mtest.newObjs(nObjs);
+      }
+   }
+   catch(std::bad_alloc e)
+   {
+      return CMD_EXEC_ERROR;
+   }
    return CMD_EXEC_DONE;
 }
 
@@ -104,7 +172,116 @@ CmdExecStatus
 MTDeleteCmd::exec(const string& option)
 {
    // TODO
-
+   vector<string> tokens;
+   int objId = -1, numRandId = -1;
+   bool isArray = false;
+   string optionStr; // for outputs after parsing parameters
+   if (!CmdExec::lexOptions(option, tokens, 0))
+      return CMD_EXEC_ERROR;
+   if(tokens.size() == 0)
+   {
+      return CmdExec::errorOption(CMD_OPT_MISSING, "");
+   }
+   vector<string> availParams;
+   availParams.push_back("-INDEX");
+   availParams.push_back("-RANDOM");
+   availParams.push_back("-ARRAY-"); // tailing '-' means no additional parameter required
+   for(size_t i=0;i<tokens.size();)
+   {
+      int value = -1;
+      int status = parseParam(tokens, availParams, i, value);
+      switch(status)
+      {
+      case -1:
+         return CmdExec::errorOption(CMD_OPT_MISSING, tokens[i]);
+      case -2:
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
+      case -3:
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
+      case 0:
+         if(objId == -1 && numRandId == -1)
+         {
+            if(value >= 0)
+            {
+               objId = value;
+               optionStr = tokens[i+1];
+               i+=2;
+               continue;
+            }
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
+         }
+         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+      case 1:
+         if(objId == -1 && numRandId == -1)
+         {
+            if(value >= 1)
+            {
+               numRandId = value;
+               optionStr = tokens[i];
+               i+=2;
+               continue;
+            }
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
+         }
+         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+      case 2:
+         if(!isArray)
+         {
+            isArray = true;
+            i++;
+            continue;
+         }
+         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+      }
+   }
+   if(objId != -1)
+   {
+      int size = -1;
+      if(isArray)
+      {
+         size = mtest.getArrListSize();
+         if(objId >= size)
+         {
+            cout << "Size of array list (" << size << ") is <= " << objId << "!!" << endl;
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
+         }
+         mtest.deleteArr(objId);
+      }
+      else
+      {
+         size = mtest.getObjListSize();
+         if(objId >= size)
+         {
+            cout << "Size of object list (" << size << ") is <= " << objId << "!!" << endl;
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
+         }
+         mtest.deleteObj(objId);
+      }
+   }
+   if(numRandId != -1)
+   {
+      if(isArray && mtest.getArrListSize() == 0)
+      {
+         cout << "Size of array list is 0!!" << endl;
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
+      }
+      if(mtest.getObjListSize() == 0) // isArray must be false here
+      {
+         cout << "Size of object list is 0!!" << endl;
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
+      }
+      for(int i=0;i<numRandId;i++)
+      {
+         if(isArray)
+         {
+            mtest.deleteArr(rnGen(mtest.getArrListSize()));
+         }
+         else
+         {
+            mtest.deleteObj(rnGen(mtest.getObjListSize()));
+         }
+      }
+   }
    return CMD_EXEC_DONE;
 }
 
