@@ -92,24 +92,28 @@ MTNewCmd::exec(const string& option)
    }
    vector<string> availParams;
    availParams.push_back("-ARRAY");
+   bool shouldntAppear[1] = { false };
    for(unsigned int i=0;i<tokens.size();)
    {
+      if(i >= 3) // all parameters are provided, so others are extra
+      {
+         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+      }
       int value = -1;
-      int status = parseParam(tokens, availParams, i, value);
+      int status = parseParam(tokens, availParams, i, value, shouldntAppear);
       switch(status)
       {
       case -1:
          return CmdExec::errorOption(CMD_OPT_MISSING, tokens[i]);
       case -2:
          return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
+      case -4:
+         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
       case 0:
-         if(arraySize >= 1) // has been set
-         {
-            return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
-         }
          if(value >= 1)
          {
             arraySize = value;
+            shouldntAppear[0] = true;
             i += 2;
             continue;
          }
@@ -175,7 +179,7 @@ MTDeleteCmd::exec(const string& option)
    vector<string> tokens;
    int objId = -1, numRandId = -1;
    bool isArray = false;
-   string optionStr; // for outputs after parsing parameters
+   string optionStr, optionStr2; // for outputs after parsing parameters
    if (!CmdExec::lexOptions(option, tokens, 0))
       return CMD_EXEC_ERROR;
    if(tokens.size() == 0)
@@ -186,10 +190,11 @@ MTDeleteCmd::exec(const string& option)
    availParams.push_back("-INDEX");
    availParams.push_back("-RANDOM");
    availParams.push_back("-ARRAY-"); // tailing '-' means no additional parameter required
+   bool shouldntAppear[3] = { false, false, false };
    for(size_t i=0;i<tokens.size();)
    {
       int value = -1;
-      int status = parseParam(tokens, availParams, i, value);
+      int status = parseParam(tokens, availParams, i, value, shouldntAppear);
       switch(status)
       {
       case -1:
@@ -198,41 +203,40 @@ MTDeleteCmd::exec(const string& option)
          return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
       case -3:
          return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
+      case -4:
+         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
       case 0:
-         if(objId == -1 && numRandId == -1)
+         if(value >= 0)
          {
-            if(value >= 0)
-            {
-               objId = value;
-               optionStr = tokens[i+1];
-               i+=2;
-               continue;
-            }
-            return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
-         }
-         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
-      case 1:
-         if(objId == -1 && numRandId == -1)
-         {
-            if(value >= 1)
-            {
-               numRandId = value;
-               optionStr = tokens[i];
-               i+=2;
-               continue;
-            }
-            return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i]);
-         }
-         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
-      case 2:
-         if(!isArray)
-         {
-            isArray = true;
-            i++;
+            objId = value;
+            optionStr = tokens[i];
+            optionStr2 = tokens[i+1];
+            shouldntAppear[0] = shouldntAppear[1] = true;
+            i+=2;
             continue;
          }
-         return CmdExec::errorOption(CMD_OPT_EXTRA, tokens[i]);
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
+      case 1:
+         if(value >= 1)
+         {
+            numRandId = value;
+            optionStr = tokens[i];
+            optionStr2 = tokens[i+1];
+            shouldntAppear[0] = shouldntAppear[1] = true;
+            i+=2;
+            continue;
+         }
+         return CmdExec::errorOption(CMD_OPT_ILLEGAL, tokens[i+1]);
+      case 2:
+         isArray = true;
+         shouldntAppear[2] = true;
+         i++;
+         continue;
       }
+   }
+   if(objId == -1 && numRandId == -1)
+   {
+      return CmdExec::errorOption(CMD_OPT_MISSING, "");
    }
    if(objId != -1)
    {
@@ -243,7 +247,7 @@ MTDeleteCmd::exec(const string& option)
          if(objId >= size)
          {
             cout << "Size of array list (" << size << ") is <= " << objId << "!!" << endl;
-            return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr2);
          }
          mtest.deleteArr(objId);
       }
@@ -253,7 +257,7 @@ MTDeleteCmd::exec(const string& option)
          if(objId >= size)
          {
             cout << "Size of object list (" << size << ") is <= " << objId << "!!" << endl;
-            return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
+            return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr2);
          }
          mtest.deleteObj(objId);
       }
@@ -265,7 +269,7 @@ MTDeleteCmd::exec(const string& option)
          cout << "Size of array list is 0!!" << endl;
          return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);
       }
-      if(mtest.getObjListSize() == 0) // isArray must be false here
+      if(!isArray && mtest.getObjListSize() == 0) // isArray must be false here
       {
          cout << "Size of object list is 0!!" << endl;
          return CmdExec::errorOption(CMD_OPT_ILLEGAL, optionStr);

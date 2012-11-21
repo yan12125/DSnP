@@ -35,8 +35,9 @@ extern char myGetChar();
 // Write directly in header file is easier (no need to change makefile), 
 // though I dont't like this...
 template<class T>
-int parseParam(const vector<string>& tokens, const vector<string>& availParams, size_t startPos, T& ret)
+int parseParam(const vector<string>& tokens, const vector<string>& availParams, size_t startPos, T& ret, bool* shouldntAppear)
 {
+   int retval = INT_MIN;
    string tokenCopy(tokens[startPos]);
    transform(tokenCopy.begin(), tokenCopy.end(), tokenCopy.begin(), ::toupper);
    for(unsigned int i=0;i!=availParams.size();i++)
@@ -50,28 +51,39 @@ int parseParam(const vector<string>& tokens, const vector<string>& availParams, 
       }
       if(tokenCopy.find(curParam.substr(0, 2))==0 && curParam.find(tokenCopy)==0)
       {
-         if(singular)
+         if(shouldntAppear[i])
          {
-            return i;
+            retval = -4; // EXTRA
+         }
+         else if(singular)
+         {
+            retval = i;
          }
          // below are for non singular parameters
-         if(tokens.size()==startPos)
+         else if(tokens.size()==startPos+1)
          {
-            return -1; // MISSING
-         }
-         stringstream ss(tokens[startPos+1]);
-         ss >> ret;
-         if(!ss.bad() && !ss.fail() && ss.eof())
-         {
-            return i; // SUCCESS
+            retval = -1; // MISSING
          }
          else
          {
-            return -2; // ILLEGAL
+            stringstream ss(tokens[startPos+1]);
+            ss >> ret;
+            if(!ss.bad() && !ss.fail() && ss.eof())
+            {
+               retval = i; // SUCCESS
+            }
+            else
+            {
+               retval = -2; // ILLEGAL
+            }
          }
       }
    }
-   return -3; // NOT A PARAM
+   if(retval == INT_MIN) // none of above satisfies
+   {
+      retval = -3; // NOT A PARAM
+   }
+   return retval;
 }
 
 #endif // UTIL_H
