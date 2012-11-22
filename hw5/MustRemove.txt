@@ -1,0 +1,9 @@
+_hw5/Makefile
+_hw5/src/Makefile.in
+_hw5/src/main/adtTest.cpp
+_hw5/src/main/adtTest.h
+_hw5/bin/adtTest.array
+_hw5/bin/adtTest.bst
+_hw5/bin/adtTest.dlist
+_hw5/ref
+_hw5/tests
