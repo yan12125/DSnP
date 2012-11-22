@@ -45,7 +45,16 @@ private:                                                                    \
 //
 // To promote 't' to the nearest multiple of SIZE_T; 
 // e.g. Let SIZE_T = 8;  toSizeT(7) = 8, toSizeT(12) = 16
-#define toSizeT(t)      SIZE_T*((t+SIZE_T_1)/SIZE_T)  // TODO
+//#define toSizeT(t)      SIZE_T*((t+SIZE_T_1)/SIZE_T)  // TODO
+// as the most frequently called macro, I do some ugly optimization...
+// http://stackoverflow.com/questions/1505582/determining-32-vs-64-bit-in-c
+// Note: shift is faster than bitwise AND - barrel shifter
+// http://stackoverflow.com/questions/4234120/which-is-faster-x1-or-x10
+#if defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__)
+#define toSizeT(t)       (((t+7)>>3)<<3)
+#else
+#define toSizeT(t)       (((t+3)>>2)<<2)
+#endif
 //
 // To demote 't' to the nearest multiple of SIZE_T
 // e.g. Let SIZE_T = 8;  downtoSizeT(9) = 8, downtoSizeT(100) = 96
@@ -388,7 +397,7 @@ private:
          throw exception;
       }
       MemRecycleList<T>* recycleList = this->getMemRecycleList(realSize);
-      if(recycleList->numElm() != 0)
+      if(recycleList->_first != 0)
       {
          ret = recycleList->popFront();
          #ifdef MEM_DEBUG
