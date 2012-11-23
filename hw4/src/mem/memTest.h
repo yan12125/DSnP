@@ -56,6 +56,10 @@ public:
    // Allocate "n" number of MemTestObj elements
    void newObjs(size_t n) {
       // TODO
+      if(n>100) // some balanced point by intuition
+      {
+         _objList.reserve(_objList.size()+n);
+      }
       for(size_t i=0;i<n;i++)
       {
          _objList.push_back(new MemTestObj);
@@ -64,6 +68,10 @@ public:
    // Allocate "n" number of MemTestObj arrays with size "s"
    void newArrs(size_t n, size_t s) {
       // TODO
+      if(n>100) // some balanced point by intuition
+      {
+         _objList.reserve(_objList.size()+n);
+      }
       for(size_t i=0;i<n;i++)
       {
          _arrList.push_back(new MemTestObj[s]);
