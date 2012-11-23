@@ -58,11 +58,20 @@ public:
       // TODO
       if(n>100) // some balanced point by intuition
       {
-         _objList.reserve(_objList.size()+n);
+         // It's impossible to encounter bad_alloc here, so no check first
+         size_t basePos = _objList.size();
+         _objList.resize(basePos + n);
+         for(vector<MemTestObj*>::iterator pos = _objList.begin()+basePos;pos!=_objList.end();pos++)
+         {
+            *pos = new MemTestObj;
+         }
       }
-      for(size_t i=0;i<n;i++)
+      else
       {
-         _objList.push_back(new MemTestObj);
+         for(size_t i=0;i<n;i++)
+         {
+            _objList.push_back(new MemTestObj);
+         }
       }
    }
    // Allocate "n" number of MemTestObj arrays with size "s"
@@ -70,11 +79,25 @@ public:
       // TODO
       if(n>100) // some balanced point by intuition
       {
-         _objList.reserve(_objList.size()+n);
-      }
-      for(size_t i=0;i<n;i++)
-      {
+         // if new an array failed (eg. array size > block size), 
+         // vector shouldn't be resized first, so new one for test first
          _arrList.push_back(new MemTestObj[s]);
+         // if succeed, objects to be newed is n-1
+         n--;
+         size_t basePos = _arrList.size();
+         _arrList.resize(basePos + n);
+         for(vector<MemTestObj*>::iterator pos = _arrList.begin()+basePos;pos!=_arrList.end();pos++)
+         {
+            *pos = new MemTestObj[s];
+            assert(*pos != NULL);
+         }
+      }
+      else
+      {
+         for(size_t i=0;i<n;i++)
+         {
+            _arrList.push_back(new MemTestObj[s]);
+         }
       }
    }
    // Delete the object with position idx in _objList[]

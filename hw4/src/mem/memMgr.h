@@ -45,16 +45,7 @@ private:                                                                    \
 //
 // To promote 't' to the nearest multiple of SIZE_T; 
 // e.g. Let SIZE_T = 8;  toSizeT(7) = 8, toSizeT(12) = 16
-//#define toSizeT(t)      SIZE_T*((t+SIZE_T_1)/SIZE_T)  // TODO
-// as the most frequently called macro, I do some ugly optimization...
-// http://stackoverflow.com/questions/1505582/determining-32-vs-64-bit-in-c
-// Note: shift is faster than bitwise AND - barrel shifter
-// http://stackoverflow.com/questions/4234120/which-is-faster-x1-or-x10
-#if defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__)
-#define toSizeT(t)       (((t+7)>>3)<<3)
-#else
-#define toSizeT(t)       (((t+3)>>2)<<2)
-#endif
+#define toSizeT(t)      SIZE_T*((t+SIZE_T_1)/SIZE_T)  // TODO
 //
 // To demote 't' to the nearest multiple of SIZE_T
 // e.g. Let SIZE_T = 8;  downtoSizeT(9) = 8, downtoSizeT(100) = 96
@@ -96,8 +87,8 @@ class MemBlock
    // 4. Return false if not enough memory
    bool getMem(size_t t, T*& ret) {
       // TODO
-      size_t realSize = toSizeT(t);
-      if(this->getRemainSize() < realSize)
+      // Note: t should have been multiple of SIZE_T here
+      if(size_t(_end - _ptr) < t)
       {
          ret = NULL;
          return false;
@@ -105,7 +96,7 @@ class MemBlock
       else
       {
          ret = reinterpret_cast<T*>(_ptr);
-         _ptr += realSize;
+         _ptr += t;
          return true;
       }
    }
@@ -154,11 +145,9 @@ class MemRecycleList
    // DO NOT release the memory occupied by MemMgr/MemBlock
    void reset() {
       // TODO
-      if(_nextList)
-      {
-         delete _nextList; // cause recursive call because destructor calls reset()
-         _nextList = NULL;
-      }
+      // http://stackoverflow.com/questions/4190703/is-it-safe-to-delete-a-null-pointer
+      delete _nextList; // cause recursive call because destructor calls reset()
+      _nextList = NULL;
       _first = NULL;
    }
 
@@ -413,7 +402,7 @@ private:
             if(remainSize >= S) // still have space to recycle
             {
                MemRecycleList<T>* recycleList = getMemRecycleList(remainSize);
-               _activeBlock->getMem(remainSize, ret);
+               _activeBlock->getMem(downtoSizeT(remainSize), ret);
                recycleList->pushFront(ret);
                #ifdef MEM_DEBUG
                size_t rn = recycleList->_arrSize;
