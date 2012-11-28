@@ -31,35 +31,103 @@ public:
       ~iterator() {} // Should NOT delete _node
 
       // TODO: implement these overloaded operators
-      const T& operator * () const { return (*this); }
+      const T& operator * () const 
+      {
+         return *node;
+      }
       T& operator * () { return (*_node); }
-      iterator& operator ++ () { return (*this); }
-      iterator operator ++ (int) { return (*this); }
-      iterator& operator -- () { return (*this); }
-      iterator operator -- (int) { return (*this); }
+      iterator& operator ++ () // prefix
+      {
+         this->node++;
+         return *this;
+      }
+      iterator operator ++ (int) // suffix
+      {
+         iterator temp = *this;
+         this->node++;
+         return temp;
+      }
+      iterator& operator -- ()
+      {
+         this->node--;
+         return (*this);
+      }
+      iterator operator -- (int)
+      {
+         iterator temp = *temp;
+         this->node--;
+         return temp;
+      }
 
-      iterator operator + (int i) const { return (*this); }
-      iterator& operator += (int i) { return (*this); }
+      iterator operator + (int i) const 
+      {
+         iterator temp = *this;
+         this->node += i;
+         return temp; 
+      }
+      iterator& operator += (int i) 
+      {
+         this->node += i;
+         return (*this);
+      }
 
-      iterator& operator = (const iterator& i) { return (*this); }
+      iterator& operator = (const iterator& i) 
+      {
+         this->node = i.node;
+         return (*this);
+      }
 
-      bool operator != (const iterator& i) const { return false; }
-      bool operator == (const iterator& i) const { return false; }
+      bool operator != (const iterator& i) const 
+      {
+         return (this->node != i.node);
+      }
+      bool operator == (const iterator& i) const 
+      {
+         return (this->node == i.node); 
+      }
 
    private:
       T*    _node;
    };
 
    // TODO: implement these functions
-   iterator begin() const { return 0; }
-   iterator end() const { return 0; }
-   bool empty() const { return false; }
-   size_t size() const { return 0; }
+   iterator begin() const 
+   {
+      return iterator(data);
+   }
+   iterator end() const 
+   {
+      return iterator(data + _size); 
+   }
+   bool empty() const 
+   {
+      return (_size == 0);
+   }
+   size_t size() const
+   {
+      return _size;
+   }
 
-   T& operator [] (size_t i) { return _data[0]; }
-   const T& operator [] (size_t i) const { return _data[0]; }
+   T& operator [] (size_t i) 
+   {
+      return _data[i];
+   }
+   const T& operator [] (size_t i) const 
+   {
+      return _data[i];
+   }
 
-   void pop_front() { }
+   void pop_front()
+   {
+      if(_size != 0)
+      {
+         for(size_t i = 0 ; i<_size-1 ; i++)
+         {
+            _data[i] = _data[i+1];
+         }
+         _size--;--
+      }
+   }
    void pop_back() { }
 
    bool erase(iterator pos) { return false; }
