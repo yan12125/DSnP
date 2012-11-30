@@ -86,3 +86,7 @@ ctags:
 	@cd ref; ln -sf adtTest-64.dlist adtTest.dlist; \
 	         ln -sf adtTest-64.array adtTest.array; \
 	         ln -sf adtTest-64.bst   adtTest.bst
+
+.PHONY: gen
+gen: 
+	make -C tests
