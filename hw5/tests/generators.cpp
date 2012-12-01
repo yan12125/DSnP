@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
    for(int i=0;i<count;i++)
    {
       int p1 = rand()%100;
-      if(p1<40)
+      if(p1<85)
       {
          memset(testStr, 0, strLen+1);
          int length = rand()%strLen+1;
@@ -37,16 +37,16 @@ int main(int argc, char* argv[])
             existStrs.push_back(testStr);
          }
       }
-      else if(p1<50)
+      else if(p1<90)
       {
          cout << "adtp " << ((rand()%2)?"-r":"") << "\n";
       }
-      else if(p1<90)
+      else if(p1<97) // the speed of delete is much faster than add
       {
          if(!existStrs.empty())
          {
             int p2 = rand()%10;
-            if(p2<4) // delete a single string
+            if(p2<7) // delete a single string
             {
                int n = rand()%existStrs.size();
                memset(testStr, 0, strLen);
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
                existStrs.erase(existStrs.begin()+n);
                cout << "adtd -s " << testStr << "\n";
             }
-            else if(p2<8) // -min or -max
+            else if(p2<9) // -min or -max
             {
                sort(existStrs.begin(), existStrs.end());
                int m = rand()%existStrs.size()+1;
@@ -86,8 +86,9 @@ int main(int argc, char* argv[])
          delete [] testStr;
          testStr = new char[strLen+1];
          memset(testStr, 0, strLen+1);
-         cout << "adtr " << strLen << "\n";
+         cout << "adtp\nadtr " << strLen << "\n";
          existStrs.clear();
+         i++; // an extra adtp command
       }
    }
    cout << "adtp\nq -f" << endl;
