@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
       }
       else if(p1<90)
       {
-         cout << "adtp " << ((rand()%2)?"-r":"") << "\n";
+         cout << "adtp " << (bBST?"-v ":"") << ((rand()%2)?"-r":"") << "\n";
       }
       else if(p1<97) // the speed of delete is much faster than add
       {
