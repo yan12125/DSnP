@@ -9,14 +9,23 @@ int main(int argc, char* argv[])
 {
    srand(time(NULL));
    int count = 100;
-   if(argc == 2)
+   bool bBST = false;
+   if(argc >= 2)
    {
       count = atoi(argv[1]);
    }
+   if(argc >= 3)
+   {
+      if(!strncmp(argv[2], "-bst", 4))
+      {
+         bBST = true;
+      }
+   }
    int strLen = rand()%20+1;
    char* testStr = new char[strLen+1];
+   cout << "adtr " << strLen << "\n";
    vector<string> existStrs;
-   for(int i=0;i<count;i++)
+   for(int i=1;i<count;i++)
    {
       int p1 = rand()%100;
       if(p1<85)
@@ -86,7 +95,12 @@ int main(int argc, char* argv[])
          delete [] testStr;
          testStr = new char[strLen+1];
          memset(testStr, 0, strLen+1);
-         cout << "adtp\nadtr " << strLen << "\n";
+         cout << "adtp";
+         if(bBST)
+         {
+            cout << " -v";
+         }
+         cout << "\nadtr " << strLen << "\n";
          existStrs.clear();
          i++; // an extra adtp command
       }

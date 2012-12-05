@@ -11,6 +11,8 @@
 
 #include <cassert>
 
+#define ADTP_DEBUG 0
+
 template <class T> class BSTree;
 
 // BSTreeNode is supposed to be a private class. User don't need to see it.
@@ -139,6 +141,7 @@ public:
          if(cur->data == i)
          {
             eraseInternal(cur);
+            return true;
          }
       }
       return false;
@@ -204,6 +207,36 @@ public:
       {
          printInternal(cout, this->root, 0);
       }
+#if ADTP_DEBUG      
+      cout << "root = ";
+      if(root)
+      {
+         cout << root->data;
+      }
+      else
+      {
+         cout << "[NULL]";
+      }
+      cout << "\nminNode = ";
+      if(minNode)
+      {
+         cout << minNode->data;
+      }
+      else
+      {
+         cout << "[NULL]" ;
+      }
+      cout << "\nmaxNode = ";
+      if(maxNode)
+      {
+         cout << maxNode->data;
+      }
+      else
+      {
+         cout << "[NULL]";
+      }
+      cout << endl;
+#endif // #if ADTP_DEBUG      
    }
 private:
    // helper functions
@@ -322,6 +355,178 @@ private:
    }
    void eraseInternal(BSTreeNode<T>* i)
    {
+      if(i == maxNode)
+      {
+         if(!i->parent)
+         {
+            if(i->left)
+            {
+               root = i->left;
+               i->left->parent = NULL;
+               maxNode = BSTree<T>::max(this->root);
+               delete i;
+            }
+            else
+            {
+               root = maxNode = minNode = NULL;
+               delete i;
+            }
+         }
+         else
+         {
+            if(i->left)
+            {
+               i->parent->right = i->left;
+               i->left->parent = i->parent;
+               delete i;
+            }
+            else
+            {
+               i->parent->right = NULL;
+               delete i;
+            }
+            // If i is both maxNode and minNode, then it's root, 
+            // so impossible to reach here. Just update maxNode
+            maxNode = BSTree<T>::max(this->root);
+         }
+      }
+      else
+      {
+         if(!i->left && !i->right)
+         {
+            // if i has no parent, then it's root, which is impossible here
+            if(i->parent->left == i)
+            {
+               i->parent->left = NULL;
+            }
+            if(i->parent->right == i)
+            {
+               i->parent->right = NULL;
+            }
+            // the case of i be maxNode has been examined before
+            if(minNode == i)
+            {
+               minNode = BSTree<T>::min(this->root);
+            }
+            delete i;
+         }
+         else
+         {
+            if((!i->left && i->right) || (!i->right && i->left)) // single child
+            {
+               connectSingleChild(i);
+               if(i == minNode)
+               {
+                  minNode = min(this->root);
+               }
+               delete i;
+            }
+            else
+            {
+               BSTreeNode<T>* nextOne = BSTree<T>::successor(i);
+               if((!nextOne->right && nextOne->left) || (!nextOne->left && nextOne->right))
+               {
+                  connectSingleChild(nextOne);
+                  if(i->parent)
+                  {
+                     if(i->parent->left == i)
+                     {
+                        i->parent->left = nextOne;
+                     }
+                     if(i->parent->right == i)
+                     {
+                        i->parent->right = nextOne;
+                     }
+                     nextOne->parent = i->parent;
+                  }
+                  else
+                  {
+                     root = nextOne;
+                     nextOne->parent = NULL;
+                  }
+                  nextOne->left = i->left;
+                  nextOne->right = i->right;
+                  if(i->left)
+                  {
+                     i->left->parent = nextOne;
+                  }
+                  if(i->right)
+                  {
+                     i->right->parent = nextOne;
+                  }
+                  delete i;
+               }
+               else
+               {
+                  if(!nextOne->left && !nextOne->right) // successor is a leaf
+                  {
+                     // It's impossoble that nextOne->parent == NULL
+                     // But nextOne->parent might be i (must be right child in this case)
+                     if(nextOne->parent != i)
+                     {
+                        if(nextOne->parent->left == nextOne)
+                        {
+                           nextOne->parent->left = NULL;
+                        }
+                        if(nextOne->parent->right == nextOne)
+                        {
+                           nextOne->parent->right = NULL;
+                        }
+                        nextOne->left = i->left;
+                        nextOne->right= i->right;
+                        if(nextOne->left)
+                        {
+                           nextOne->left->parent = nextOne;
+                        }
+                        if(nextOne->right)
+                        {
+                           nextOne->right->parent = nextOne;
+                        }
+                     }
+                     else
+                     {
+                        nextOne->left = i->left;
+                        if(nextOne->left)
+                        {
+                           nextOne->left->parent = nextOne;
+                        }
+                     }
+                     if(i->parent)
+                     {
+                        if(i->parent->left == i)
+                        {
+                           i->parent->left = nextOne;
+                        }
+                        if(i->parent->right == i)
+                        {
+                           i->parent->right = nextOne;
+                        }
+                        nextOne->parent = i->parent;
+                     }
+                     else
+                     {
+                        root = nextOne;
+                        nextOne->parent = NULL;
+                     }
+                     if(i == minNode) // deleted, so assign the new one
+                     {
+                        minNode = BSTree<T>::min(this->root);
+                     }
+                     delete i;
+                  }
+               }
+            }
+         }
+      }
+      try
+      {
+         verify(this->root);
+      }
+      catch(pair<BSTreeNode<T>*, const char*>& e)
+      {
+         cout << "\033[31m" << e.first->data << "->" << e.second << "->parent != " << e.first->data << "\033[0m" << endl;
+      }
+      return;
    }
    void clearInternal(BSTreeNode<T>* i)
    {
@@ -369,6 +574,50 @@ private:
       printInternal(os, i->left, indent+2);
       printInternal(os, i->right, indent+2);
       cout.flush();
+   }
+   void verify(BSTreeNode<T>* i) // for debugging, check connections between nodes
+   {
+      if(i == NULL) // occurs when called with root == NULL
+      {
+         return;
+      }
+      if(i->left)
+      {
+         if(i->left->parent != i)
+         {
+            throw make_pair(i, "left");
+         }
+         verify(i->left);
+      }
+      if(i->right)
+      {
+         if(i->right->parent != i)
+         {
+            throw make_pair(i, "right");
+         }
+         verify(i->right);
+      }
+   }
+   void connectSingleChild(BSTreeNode<T>* i)
+   {
+      BSTreeNode<T>* target = (i->right)?(i->right):(i->left);
+      if(i->parent)
+      {
+         if(i->parent->left == i)
+         {
+            i->parent->left = target;
+         }
+         else if(i->parent->right == i)
+         {
+            i->parent->right = target;
+         }
+         target->parent = i->parent;
+      }
+      else
+      {
+         root = target;
+         target->parent = NULL;
+      }
    }
    // data members
    BSTreeNode<T>* root;
