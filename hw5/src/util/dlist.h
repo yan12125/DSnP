@@ -10,7 +10,6 @@
 #define DLIST_H
 
 #include <cassert>
-#include <typeinfo>
 
 template <class T> class DList;
 

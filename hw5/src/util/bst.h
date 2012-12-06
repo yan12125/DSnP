@@ -12,6 +12,11 @@
 #include <cassert>
 
 #define ADTP_DEBUG 0
+#define ADT_PERFORMANCE 0
+
+#if ADT_PERFORMANCE
+   clock_t clocks[10];
+#endif
 
 template <class T> class BSTree;
 
@@ -54,7 +59,7 @@ public:
    class iterator
    {
    public:
-      iterator(BSTreeNode<T>* data): node(data)
+      iterator(BSTreeNode<T>* data, BSTreeNode<T>* hidden = NULL): node(data), hiddenNode(hidden)
       {
       }
       ~iterator()
@@ -82,14 +87,28 @@ public:
       }
       const iterator& operator--() // prefix
       {
-         this->node = BSTree<T>::predecessor(this->node);
+         if(!this->node)
+         {
+            this->node = hiddenNode;
+         }
+         else
+         {
+            this->node = BSTree<T>::predecessor(this->node);
+         }
          return *this;
       }
       iterator operator--(int)
       {
          iterator temp = *this;
-         this->node = BSTree<T>::predecessor(this->node);
-         return *this;
+         if(!this->node)
+         {
+            this->node = hiddenNode;
+         }
+         else
+         {
+            this->node = BSTree<T>::predecessor(this->node);
+         }
+         return temp;
       }
       iterator& operator=(const iterator& i)
       {
@@ -106,17 +125,31 @@ public:
       }
    private:
       BSTreeNode<T>* node;
+      BSTreeNode<T>* hiddenNode; // only for end()--
 
       friend class BSTree<T>;
    };
 
+   BSTree() : root(NULL), minNode(NULL), maxNode(NULL)
+   {
+   }
+   ~BSTree()
+   {
+#if ADT_PERFORMANCE
+      for(int i=0;i<10;i++)
+      {
+         cout << (1.0*clocks[i])/CLOCKS_PER_SEC << " ";
+      }
+      cout << endl;
+#endif
+   }
    iterator begin() const
    {
       return iterator(this->minNode);
    }
    iterator end() const
    {
-      return iterator(NULL);
+      return iterator(NULL, maxNode);
    }
    bool empty() const
    {
@@ -128,11 +161,17 @@ public:
    }
    void pop_front()
    {
-      eraseInternal(minNode);
+      if(root) // not empty
+      {
+         eraseInternal(minNode);
+      }
    }
    void pop_back()
    {
-      eraseInternal(maxNode);
+      if(root)
+      {
+         eraseInternal(maxNode);
+      }
    }
    bool erase(const T& i)
    {
@@ -148,8 +187,15 @@ public:
    }
    bool erase(iterator pos)
    {
-      eraseInternal(pos.node);
-      return false;
+      if(root) // not empty
+      {
+         eraseInternal(pos.node);
+         return true;
+      }
+      else
+      {
+         return false;
+      }
    }
    bool insert(const T& i)
    {
@@ -242,56 +288,72 @@ private:
    // helper functions
    static BSTreeNode<T>* successor(BSTreeNode<T>* i)
    {
+#if ADT_PERFORMANCE
+      clock_t now = clock();
+#endif
+      BSTreeNode<T>* ret = NULL;
       if(!i->parent) // root
       {
-         return (i->right)?(BSTree<T>::min(i->right)):(NULL);
+         ret = (i->right)?(BSTree<T>::min(i->right)):(NULL);
       }
-      if(i->parent->left == i)
+      else if(i->parent->left == i)
       {
          if(i->right)
          {
             BSTreeNode<T>* candidate1 = i->parent;
             BSTreeNode<T>* candidate2 = BSTree<T>::min(i->right);
-            return (candidate1->data < candidate2->data)?candidate1:candidate2;
+            ret = (candidate1->data < candidate2->data)?candidate1:candidate2;
          }
          else
          {
-            return i->parent;
+            ret = i->parent;
          }
       }
-      // parent's right child
-      if(i->right)
+      else
       {
-         return BSTree<T>::min(i->right);
-      }
-      // successor are from upper levels
-      BSTreeNode<T>* cur = i;
-      while(1)
-      {
-         if(!cur->parent) // come to root, means no successor
+         // parent's right child
+         if(i->right)
          {
-            return NULL;
+            ret = BSTree<T>::min(i->right);
          }
-         if(cur->parent->left == cur)
+         else
          {
-            return cur->parent;
+            // successor are from upper levels
+            BSTreeNode<T>* cur = i;
+            while(1)
+            {
+               if(!cur->parent) // come to root, means no successor
+               {
+                  ret = NULL;
+                  break;
+               }
+               else if(cur->parent->left == cur)
+               {
+                  ret = cur->parent;
+                  break;
+               }
+               cur = cur->parent;
+            }
          }
-         cur = cur->parent;
       }
+#if ADT_PERFORMANCE
+      clocks[1] = clock() - now;
+#endif
+      return ret;
    }
    static BSTreeNode<T>* predecessor(BSTreeNode<T>* i)
    {
       if(!i->parent) // root
       {
-         return (i->left)?(BSTree<T>::min(i->left)):(NULL);
+         return (i->left)?(BSTree<T>::max(i->left)):(NULL);
       }
       if(i->parent->right == i)
       {
          if(i->left)
          {
             BSTreeNode<T>* candidate1 = i->parent;
-            BSTreeNode<T>* candidate2 = BSTree<T>::min(i->left);
-            return (candidate1->data < candidate2->data)?candidate1:candidate2;
+            BSTreeNode<T>* candidate2 = BSTree<T>::max(i->left);
+            return (candidate2->data < candidate1->data)?candidate1:candidate2;
          }
          else
          {
@@ -301,9 +363,9 @@ private:
       // parent's right child
       if(i->left)
       {
-         return BSTree<T>::min(i->left);
+         return BSTree<T>::max(i->left);
       }
-      // successor are from upper levels
+      // predecessor are from upper levels
       BSTreeNode<T>* cur = i;
       while(1)
       {
@@ -320,15 +382,18 @@ private:
    }
    static BSTreeNode<T>* min(BSTreeNode<T>* i)
    {
+#if ADT_PERFORMANCE
+      clock_t now = clock();
+#endif
       BSTreeNode<T>* cur = i;
-      while(1)
+      while(cur->left)
       {
-         if(!cur->left)
-         {
-            return cur;
-         }
          cur = cur->left;
       }
+#if ADT_PERFORMANCE
+      clocks[0] += clock() - now;
+#endif
+      return cur;
    }
    static BSTreeNode<T>* max(BSTreeNode<T>* i)
    {
@@ -345,13 +410,8 @@ private:
    size_t sizeInternal(BSTreeNode<T>* i) const
    {
       // recursive
-      if(!i->left && !i->right)
-      {
-         return 1;
-      }
-      // else
-      return ( (i->left ?sizeInternal(i->left): 0) +
-               (i->right?sizeInternal(i->right):0) );
+      return ( 1 + (i->left ?sizeInternal(i->left): 0) +
+                   (i->right?sizeInternal(i->right):0) );
    }
    void eraseInternal(BSTreeNode<T>* i)
    {

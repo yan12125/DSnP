@@ -7,6 +7,8 @@ Slides
 # for test c++ or makefile or so
 test
 b00901160*
+# Microsoft Office temporary files
+~*.tmp
 
 # vim temporary files
 .*.swp

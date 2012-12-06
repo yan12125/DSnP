@@ -189,7 +189,7 @@ public:
             }
          };
       }
-      assert(upperBound + 1 == lowerBound);
+      // assert(upperBound + 1 == lowerBound);
       // Position: upperBound (x to be inserted) lowerBound
       if(_size+1 >= _capacity)
       {
