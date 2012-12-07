@@ -49,3 +49,8 @@ cmdGenerator
 memTest
 memTest.debug
 tests
+
+#hw6
+tests.err
+tests.fraig
+

@@ -1,0 +1,8 @@
+_hw6/Makefile
+_hw6/bin/cirTest
+_hw6/src/Makefile.in
+_hw6/src/cir/cirCmd.h
+_hw6/src/cir/cirCmd.cpp
+_hw6/ref
+_hw6/tests.err
+_hw6/tests.fraig
