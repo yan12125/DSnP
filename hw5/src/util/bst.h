@@ -12,11 +12,14 @@
 #include <cassert>
 
 #define ADTP_DEBUG 0
-#define ADT_PERFORMANCE 1
+#define ADT_PERFORMANCE_TIME 0
+#define ADT_PERFORMANCE_ERASE_CONDS 0
 
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_TIME
    clock_t clocks[10] = { 0 };
-   int eraseConds[10] = { 0 };
+#endif
+#if ADT_PERFORMANCE_ERASE_CONDS
+   int eraseConds[10] = { 0 }; // count how often each conditions in eraseInternal occurs
 #endif
 
 template <class T> class BSTree;
@@ -136,13 +139,16 @@ public:
    }
    ~BSTree()
    {
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_TIME
       cout << "Clocks: \n";
       for(int i=0;i<10;i++)
       {
          cout << (1.0*clocks[i])/CLOCKS_PER_SEC << " ";
       }
-      cout << "\neraseConds: \n";
+      cout << endl;
+#endif
+#if ADT_PERFORMANCE_ERASE_CONDS
+      cout << "eraseConds: \n";
       for(int i=0;i<10;i++)
       {
          cout << eraseConds[i] << " ";
@@ -182,15 +188,37 @@ public:
    }
    bool erase(const T& i)
    {
-      for(BSTreeNode<T>* cur = minNode;cur != NULL;cur = BSTree<T>::successor(cur))
+      BSTreeNode<T>* cur = this->root;
+      while(1)
       {
          if(cur->data == i)
          {
             eraseInternal(cur);
             return true;
          }
+         else if(cur->data < i)
+         {
+            if(cur->right)
+            {
+               cur = cur->right;
+            }
+            else
+            {
+               return false;
+            }
+         }
+         else // cur->data > i
+         {
+            if(cur->left)
+            {
+               cur = cur->left;
+            }
+            else
+            {
+               return false;
+            }
+         }
       }
-      return false;
    }
    bool erase(iterator pos)
    {
@@ -270,7 +298,7 @@ private:
    // helper functions
    static BSTreeNode<T>* successor(BSTreeNode<T>* i)
    {
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_TIME
       clock_t now = clock();
 #endif
       BSTreeNode<T>* ret = NULL;
@@ -317,7 +345,7 @@ private:
             }
          }
       }
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_TIME
       clocks[1] = clock() - now;
 #endif
       return ret;
@@ -362,7 +390,7 @@ private:
    }
    static BSTreeNode<T>* min(BSTreeNode<T>* i)
    {
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_TIME
       clock_t now = clock();
 #endif
       BSTreeNode<T>* cur = i;
@@ -370,7 +398,7 @@ private:
       {
          cur = cur->left;
       }
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_TIME
       clocks[0] += clock() - now;
 #endif
       return cur;
@@ -401,7 +429,7 @@ private:
                root = i->left;
                i->left->parent = NULL;
                maxNode = BSTree<T>::max(this->root);
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
                eraseConds[0]++;
 #endif
                delete i;
@@ -409,7 +437,7 @@ private:
             else
             {
                root = maxNode = minNode = NULL;
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
                eraseConds[1]++;
 #endif
                delete i;
@@ -421,7 +449,7 @@ private:
             {
                i->parent->right = i->left;
                i->left->parent = i->parent;
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
                eraseConds[2]++;
 #endif
                delete i;
@@ -429,7 +457,7 @@ private:
             else
             {
                i->parent->right = NULL;
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
                eraseConds[3]++;
 #endif
                delete i;
@@ -450,7 +478,7 @@ private:
             {
                minNode = BSTree<T>::min(this->root);
             }
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
             eraseConds[4]++;
 #endif
             delete i;
@@ -464,7 +492,7 @@ private:
                {
                   minNode = min(this->root);
                }
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
                eraseConds[5]++;
 #endif
                delete i;
@@ -495,58 +523,55 @@ private:
                   {
                      i->right->parent = nextOne;
                   }
-#if ADT_PERFORMANCE
+#if ADT_PERFORMANCE_ERASE_CONDS
                   eraseConds[6]++;
 #endif
                   delete i;
                }
                else
                {
-                  if(!nextOne->left && !nextOne->right) // successor is a leaf
+                  // It's impossoble that nextOne->parent == NULL
+                  // But nextOne->parent might be i (must be right child in this case)
+                  if(nextOne->parent != i)
                   {
-                     // It's impossoble that nextOne->parent == NULL
-                     // But nextOne->parent might be i (must be right child in this case)
-                     if(nextOne->parent != i)
+                     setParent(nextOne, NULL);
+                     nextOne->left = i->left;
+                     nextOne->right= i->right;
+                     if(nextOne->left)
                      {
-                        setParent(nextOne, NULL);
-                        nextOne->left = i->left;
-                        nextOne->right= i->right;
-                        if(nextOne->left)
-                        {
-                           nextOne->left->parent = nextOne;
-                        }
-                        if(nextOne->right)
-                        {
-                           nextOne->right->parent = nextOne;
-                        }
+                        nextOne->left->parent = nextOne;
                      }
-                     else
+                     if(nextOne->right)
                      {
-                        nextOne->left = i->left;
-                        if(nextOne->left)
-                        {
-                           nextOne->left->parent = nextOne;
-                        }
+                        nextOne->right->parent = nextOne;
                      }
-                     if(i->parent)
-                     {
-                        setParent(i, nextOne);
-                        nextOne->parent = i->parent;
-                     }
-                     else
-                     {
-                        root = nextOne;
-                        nextOne->parent = NULL;
-                     }
-                     if(i == minNode) // deleted, so assign the new one
-                     {
-                        minNode = BSTree<T>::min(this->root);
-                     }
-#if ADT_PERFORMANCE
-                     eraseConds[7]++;
-#endif
-                     delete i;
                   }
+                  else
+                  {
+                     nextOne->left = i->left;
+                     if(nextOne->left)
+                     {
+                        nextOne->left->parent = nextOne;
+                     }
+                  }
+                  if(i->parent)
+                  {
+                     setParent(i, nextOne);
+                     nextOne->parent = i->parent;
+                  }
+                  else
+                  {
+                     root = nextOne;
+                     nextOne->parent = NULL;
+                  }
+                  if(i == minNode) // deleted, so assign the new one
+                  {
+                     minNode = BSTree<T>::min(this->root);
+                  }
+#if ADT_PERFORMANCE_ERASE_CONDS
+                  eraseConds[7]++;
+#endif
+                  delete i;
                }
             }
          }

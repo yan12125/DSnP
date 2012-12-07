@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
    for(int i=1;i<count;i++)
    {
       int p1 = rand()%100;
-      if(p1<85)
+      if(p1<75)
       {
          memset(testStr, 0, strLen+1);
          int length = rand()%strLen+1;
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
             existStrs.push_back(testStr);
          }
       }
-      else if(p1<90)
+      else if(p1<80)
       {
          cout << "adtp " << (bBST?"-v ":"") << ((rand()%2)?"-r":"") << "\n";
       }
