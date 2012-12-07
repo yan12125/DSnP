@@ -12,10 +12,11 @@
 #include <cassert>
 
 #define ADTP_DEBUG 0
-#define ADT_PERFORMANCE 0
+#define ADT_PERFORMANCE 1
 
 #if ADT_PERFORMANCE
-   clock_t clocks[10];
+   clock_t clocks[10] = { 0 };
+   int eraseConds[10] = { 0 };
 #endif
 
 template <class T> class BSTree;
@@ -136,9 +137,15 @@ public:
    ~BSTree()
    {
 #if ADT_PERFORMANCE
+      cout << "Clocks: \n";
       for(int i=0;i<10;i++)
       {
          cout << (1.0*clocks[i])/CLOCKS_PER_SEC << " ";
+      }
+      cout << "\neraseConds: \n";
+      for(int i=0;i<10;i++)
+      {
+         cout << eraseConds[i] << " ";
       }
       cout << endl;
 #endif
@@ -253,35 +260,10 @@ public:
       {
          printInternal(cout, this->root, 0);
       }
-#if ADTP_DEBUG      
-      cout << "root = ";
-      if(root)
-      {
-         cout << root->data;
-      }
-      else
-      {
-         cout << "[NULL]";
-      }
-      cout << "\nminNode = ";
-      if(minNode)
-      {
-         cout << minNode->data;
-      }
-      else
-      {
-         cout << "[NULL]" ;
-      }
-      cout << "\nmaxNode = ";
-      if(maxNode)
-      {
-         cout << maxNode->data;
-      }
-      else
-      {
-         cout << "[NULL]";
-      }
-      cout << endl;
+#if ADTP_DEBUG
+      printPtr("root", root);
+      printPtr("minNode", minNode);
+      printPtr("maxNode", maxNode);
 #endif // #if ADTP_DEBUG      
    }
 private:
@@ -300,9 +282,8 @@ private:
       {
          if(i->right)
          {
-            BSTreeNode<T>* candidate1 = i->parent;
-            BSTreeNode<T>* candidate2 = BSTree<T>::min(i->right);
-            ret = (candidate1->data < candidate2->data)?candidate1:candidate2;
+            BSTreeNode<T>* candidate = BSTree<T>::min(i->right);
+            ret = (i->parent->data < candidate->data)?i->parent:candidate;
          }
          else
          {
@@ -351,9 +332,8 @@ private:
       {
          if(i->left)
          {
-            BSTreeNode<T>* candidate1 = i->parent;
-            BSTreeNode<T>* candidate2 = BSTree<T>::max(i->left);
-            return (candidate2->data < candidate1->data)?candidate1:candidate2;
+            BSTreeNode<T>* candidate = BSTree<T>::max(i->left);
+            return (candidate->data < i->parent->data)?i->parent:candidate;
          }
          else
          {
@@ -398,14 +378,11 @@ private:
    static BSTreeNode<T>* max(BSTreeNode<T>* i)
    {
       BSTreeNode<T>* cur = i;
-      while(1)
+      while(cur->right)
       {
-         if(!cur->right)
-         {
-            return cur;
-         }
          cur = cur->right;
       }
+      return cur;
    }
    size_t sizeInternal(BSTreeNode<T>* i) const
    {
@@ -424,11 +401,17 @@ private:
                root = i->left;
                i->left->parent = NULL;
                maxNode = BSTree<T>::max(this->root);
+#if ADT_PERFORMANCE
+               eraseConds[0]++;
+#endif
                delete i;
             }
             else
             {
                root = maxNode = minNode = NULL;
+#if ADT_PERFORMANCE
+               eraseConds[1]++;
+#endif
                delete i;
             }
          }
@@ -438,11 +421,17 @@ private:
             {
                i->parent->right = i->left;
                i->left->parent = i->parent;
+#if ADT_PERFORMANCE
+               eraseConds[2]++;
+#endif
                delete i;
             }
             else
             {
                i->parent->right = NULL;
+#if ADT_PERFORMANCE
+               eraseConds[3]++;
+#endif
                delete i;
             }
             // If i is both maxNode and minNode, then it's root, 
@@ -455,19 +444,15 @@ private:
          if(!i->left && !i->right)
          {
             // if i has no parent, then it's root, which is impossible here
-            if(i->parent->left == i)
-            {
-               i->parent->left = NULL;
-            }
-            if(i->parent->right == i)
-            {
-               i->parent->right = NULL;
-            }
+            setParent(i, NULL);
             // the case of i be maxNode has been examined before
             if(minNode == i)
             {
                minNode = BSTree<T>::min(this->root);
             }
+#if ADT_PERFORMANCE
+            eraseConds[4]++;
+#endif
             delete i;
          }
          else
@@ -479,6 +464,9 @@ private:
                {
                   minNode = min(this->root);
                }
+#if ADT_PERFORMANCE
+               eraseConds[5]++;
+#endif
                delete i;
             }
             else
@@ -489,14 +477,7 @@ private:
                   connectSingleChild(nextOne);
                   if(i->parent)
                   {
-                     if(i->parent->left == i)
-                     {
-                        i->parent->left = nextOne;
-                     }
-                     if(i->parent->right == i)
-                     {
-                        i->parent->right = nextOne;
-                     }
+                     setParent(i, nextOne);
                      nextOne->parent = i->parent;
                   }
                   else
@@ -514,6 +495,9 @@ private:
                   {
                      i->right->parent = nextOne;
                   }
+#if ADT_PERFORMANCE
+                  eraseConds[6]++;
+#endif
                   delete i;
                }
                else
@@ -524,14 +508,7 @@ private:
                      // But nextOne->parent might be i (must be right child in this case)
                      if(nextOne->parent != i)
                      {
-                        if(nextOne->parent->left == nextOne)
-                        {
-                           nextOne->parent->left = NULL;
-                        }
-                        if(nextOne->parent->right == nextOne)
-                        {
-                           nextOne->parent->right = NULL;
-                        }
+                        setParent(nextOne, NULL);
                         nextOne->left = i->left;
                         nextOne->right= i->right;
                         if(nextOne->left)
@@ -553,14 +530,7 @@ private:
                      }
                      if(i->parent)
                      {
-                        if(i->parent->left == i)
-                        {
-                           i->parent->left = nextOne;
-                        }
-                        if(i->parent->right == i)
-                        {
-                           i->parent->right = nextOne;
-                        }
+                        setParent(i, nextOne);
                         nextOne->parent = i->parent;
                      }
                      else
@@ -572,12 +542,16 @@ private:
                      {
                         minNode = BSTree<T>::min(this->root);
                      }
+#if ADT_PERFORMANCE
+                     eraseConds[7]++;
+#endif
                      delete i;
                   }
                }
             }
          }
       }
+#if ADTP_DEBUG
       try
       {
          verify(this->root);
@@ -586,6 +560,7 @@ private:
       {
          cout << "\033[31m" << e.first->data << "->" << e.second << "->parent != " << e.first->data << "\033[0m" << endl;
       }
+#endif
       return;
    }
    void clearInternal(BSTreeNode<T>* i)
@@ -635,6 +610,21 @@ private:
       printInternal(os, i->right, indent+2);
       cout.flush();
    }
+   void printPtr(const char* name, BSTreeNode<T>* ptr) const
+   {
+      // default ternary(?:) operator is not defined when two chioces have different type
+      cout << name << " = ";
+      if(ptr)
+      {
+         cout << ptr->data;
+      }
+      else
+      {
+         cout << "[NULL]";
+      }
+      cout << endl;
+   }
+#ifdef ADTP_DEBUG
    void verify(BSTreeNode<T>* i) // for debugging, check connections between nodes
    {
       if(i == NULL) // occurs when called with root == NULL
@@ -658,6 +648,7 @@ private:
          verify(i->right);
       }
    }
+#endif // #if ADTP_DEBUG
    void connectSingleChild(BSTreeNode<T>* i)
    {
       BSTreeNode<T>* target = (i->right)?(i->right):(i->left);
@@ -677,6 +668,17 @@ private:
       {
          root = target;
          target->parent = NULL;
+      }
+   }
+   void setParent(BSTreeNode<T>* i, BSTreeNode<T>* value)
+   {
+      if(i->parent->left == i)
+      {
+         i->parent->left = value;
+      }
+      if(i->parent->right == i)
+      {
+         i->parent->right = value;
       }
    }
    // data members
