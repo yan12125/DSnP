@@ -43,4 +43,32 @@ protected:
 
 };
 
+class CirAndGate: public CirGate
+{
+public:
+   CirAndGate(unsigned int, unsigned int, unsigned int);
+   ~CirAndGate();
+   virtual void printGate() const;
+protected:
+private:
+   CirAndGate();
+   unsigned int pin[3]; // pins: o, i1, i2 respectively
+   bool inv[3];
+};
+
+class CirIOGate: public CirGate
+{
+public:
+   enum gateType { IGate, OGate };
+   CirIOGate(unsigned int, enum gateType);
+   ~CirIOGate();
+   void setName(const string&);
+   virtual void printGate() const;
+protected:
+   unsigned int id;
+   gateType type;
+   bool inverted;
+   string name;
+};
+
 #endif // CIR_GATE_H
