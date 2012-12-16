@@ -26,18 +26,18 @@ class CirGate
 {
 public:
    friend class CirMgr;
-   CirGate(enum GateType _gateType): gateType(_gateType){}
+   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line){}
    virtual ~CirGate() {}
 
    // Basic access methods
    string getTypeStr() const;
    unsigned getLineNo() const { return 0; }
    virtual int getID() const = 0;
-   bool isInvert(CirGate*) const;
+   bool isInvert(CirGate*) const; // for fanout only, because fanin save inverted information in
 
    // Printing functions
    void reportGate() const;
-   void reportFanin(int level) const;
+   void reportFanin(int level, int indent = 0, bool invert = false, list<const CirGate*> *reported = NULL) const;
    void reportFanout(int level, int indent = 0, bool invert = false, list<const CirGate*> *reported = NULL) const;
 
 private:
@@ -47,6 +47,7 @@ protected:
    vector<unsigned int> fanin;
    vector<unsigned int> fanout;
    enum GateType gateType;
+   unsigned int lineNo;
 };
 
 class CirAndGate: public CirGate
@@ -54,7 +55,7 @@ class CirAndGate: public CirGate
 public:
    friend class CirMgr;
    friend class CirGate;
-   CirAndGate(unsigned int, unsigned int, unsigned int);
+   CirAndGate(unsigned int, unsigned int, unsigned int, unsigned int);
    ~CirAndGate();
    virtual int getID() const;
 protected:
@@ -68,8 +69,8 @@ class CirIOGate: public CirGate
 public:
    friend class CirMgr;
    friend class CirGate;
-   CirIOGate(unsigned int); // for PI
-   CirIOGate(unsigned int, int); // for PO
+   CirIOGate(unsigned int, unsigned int); // for PI
+   CirIOGate(unsigned int, int, unsigned int); // for PO
    ~CirIOGate();
    void setName(const string&);
    virtual int getID() const;
@@ -85,7 +86,7 @@ class CirConstGate: public CirGate
 public:
    friend class CirMgr;
    friend class CirGate;
-   CirConstGate(bool _value): CirGate(CONST_GATE), value(_value){}
+   CirConstGate(bool _value): CirGate(CONST_GATE, 0), value(_value){}
    ~CirConstGate(){};
    virtual int getID() const;
 private:

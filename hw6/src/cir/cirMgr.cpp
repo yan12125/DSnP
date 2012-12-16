@@ -169,6 +169,7 @@ CirMgr::readCircuit(const string& fileName)
 {
    fCir = new fstream(fileName.c_str(), ios::in);
    string curLine;
+   lineNo = 1;
    unsigned int nAndGates = 0;
    enum { header, input, latch, output, andGate, symbol, comment } curSec = header;
    while(1)
@@ -203,7 +204,7 @@ CirMgr::readCircuit(const string& fileName)
             else
             {
                int id = strtol(curLine.c_str(), NULL, 10);
-               gates[id/2] = new CirIOGate(id);
+               gates[id/2] = new CirIOGate(id, lineNo);
                PI.push_back(id);
                break;
             }
@@ -219,7 +220,7 @@ CirMgr::readCircuit(const string& fileName)
             {
                int id = strtol(curLine.c_str(), NULL, 10);
                int pos = M+PO.size()+1;
-               gates[pos] = new CirIOGate(id, pos);
+               gates[pos] = new CirIOGate(id, pos, lineNo);
                PO.push_back(pos);
                break;
             }
@@ -234,7 +235,7 @@ CirMgr::readCircuit(const string& fileName)
                int o = 0, i1 = 0, i2 = 0;
                if(3 == sscanf(curLine.c_str(), "%d %d %d", &o, &i1, &i2))
                {
-                  gates[o/2] = new CirAndGate(o, i1, i2);
+                  gates[o/2] = new CirAndGate(o, i1, i2, lineNo);
                   nAndGates++;
                }
                else
@@ -351,6 +352,33 @@ CirMgr::readCircuit(const string& fileName)
          gates[tmp->id]->fanout.push_back(tmp->n);
       }
    }
+   /****** Parse Fanins for And gates *******/
+   // Put inverting information in fanins vector is required, 
+   // because fanins can be same but with different inverting
+   for(unsigned int i=1;i<=M+O;i++)
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType == AIG_GATE)
+         {
+            CirAndGate* tmp = reinterpret_cast<CirAndGate*>(gates[i]);
+            #if PARSE_DEBUG
+            cout << i << " fanin " << tmp->pin[1] << (tmp->inv[1]?" inverted":"") << "\n"
+                 << i << " fanin " << tmp->pin[2] << (tmp->inv[2]?" inverted":"") << endl;
+            #endif
+            tmp->fanin.push_back(tmp->pin[1]*2+tmp->inv[1]);
+            tmp->fanin.push_back(tmp->pin[2]*2+tmp->inv[2]);
+         }
+         if(gates[i]->gateType == PO_GATE)
+         {
+            CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[i]);
+            #if PARSE_DEBUG
+            cout << i << " fanin " << tmp->id << endl;
+            #endif
+            tmp->fanin.push_back(tmp->id*2+tmp->inverted);
+         }
+      }
+   }
    return true;
 }
 
@@ -364,11 +392,30 @@ Circuit Statistics
   PO          12
   AIG        130
 ------------------
-  Total      167
+  Total      162
 *********************/
 void
 CirMgr::printSummary() const
 {
+   unsigned int aig_count = 0;
+   for(unsigned int i=0;i<=M;i++)
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType == AIG_GATE)
+         {
+            aig_count++;
+         }
+      }
+   }
+   const int padding = 9;
+   cout << "\nCircuit Statistics\n" // wierd blank? ref!
+        << "==================\n"
+        << "  PI   " << setw(padding) << PI.size() << "\n"
+        << "  PO   " << setw(padding) << PO.size() << "\n"
+        << "  AIG  " << setw(padding) << aig_count << "\n"
+        << "------------------\n"
+        << "  Total" << setw(padding) << PI.size()+PO.size()+aig_count << endl;
 }
 
 void
@@ -380,6 +427,10 @@ void
 CirMgr::printPIs() const
 {
    cout << "PIs of the circuit:";
+   for(vector<unsigned int>::const_iterator it = PI.begin();it != PI.end();it++)
+   {
+      cout << " " << (*it)/2; // because no /2 in readCircuit(), don't know why
+   }
    cout << endl;
 }
 
@@ -387,6 +438,10 @@ void
 CirMgr::printPOs() const
 {
    cout << "POs of the circuit:";
+   for(vector<unsigned int>::const_iterator it = PO.begin();it != PO.end();it++)
+   {
+      cout << " " << *it;
+   }
    cout << endl;
 }
 
