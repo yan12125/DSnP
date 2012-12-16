@@ -19,6 +19,8 @@
 
 using namespace std;
 
+#define PARSE_DEBUG 0
+
 // TODO: Implement memeber functions for class CirMgr
 
 /*******************************/
@@ -160,16 +162,6 @@ CirMgr::~CirMgr()
       delete gates[i];
    }
    delete [] gates;
-   for(vector<CirIOGate*>::iterator it = PI.begin();it != PI.end();it++)
-   {
-      delete *it;
-   }
-   PI.clear();
-   for(vector<CirIOGate*>::iterator it = PO.begin();it != PO.end();it++)
-   {
-      delete *it;
-   }
-   PO.clear();
 }
 
 bool
@@ -188,8 +180,9 @@ CirMgr::readCircuit(const string& fileName)
             if(5 == sscanf(curLine.c_str(), "aag %d %d %d %d %d", &M, &I, &L, &O, &A))
             {
                // successfully parsed
-               gates = new CirGate*[M+1]; // additional one for primitives (0 and 1)
-               for(unsigned int i=0;i<M+1;i++)
+               gates = new CirGate*[M+O+1]; // additional one for primitives (0 and 1)
+               gates[0] = new CirConstGate(false);
+               for(unsigned int i=1;i<M+O+1;i++)
                {
                   gates[i] = NULL;
                }
@@ -210,7 +203,8 @@ CirMgr::readCircuit(const string& fileName)
             else
             {
                int id = strtol(curLine.c_str(), NULL, 10);
-               PI.push_back(new CirIOGate(id, CirIOGate::IGate));
+               gates[id/2] = new CirIOGate(id);
+               PI.push_back(id);
                break;
             }
          case latch:
@@ -224,7 +218,9 @@ CirMgr::readCircuit(const string& fileName)
             else
             {
                int id = strtol(curLine.c_str(), NULL, 10);
-               PO.push_back(new CirIOGate(id, CirIOGate::OGate));
+               int pos = M+PO.size()+1;
+               gates[pos] = new CirIOGate(id, pos);
+               PO.push_back(pos);
                break;
             }
          case andGate:
@@ -262,10 +258,10 @@ CirMgr::readCircuit(const string& fileName)
                switch(type)
                {
                   case 'i': // input gate
-                     reinterpret_cast<CirIOGate*>(PI[id])->setName(name);
+                     reinterpret_cast<CirIOGate*>(gates[PI[id]/2])->setName(name);
                      break;
                   case 'o': // output gate
-                     reinterpret_cast<CirIOGate*>(PO[id])->setName(name);
+                     reinterpret_cast<CirIOGate*>(gates[PO[id]])->setName(name);
                      break;
                   default:
                      cout << "Line " << __LINE__ << "\n";
@@ -292,6 +288,67 @@ CirMgr::readCircuit(const string& fileName)
          delete fCir;
          fCir = NULL;
          break;
+      }
+   }
+   /*********** Build undefGates ***********/
+   for(unsigned int i=0;i<=M+O;i++)
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType == AIG_GATE)
+         {
+            CirAndGate* tmp = reinterpret_cast<CirAndGate*>(gates[i]);
+            if(!gates[tmp->pin[1]])
+            {
+               gates[tmp->pin[1]] = new CirUndefGate(tmp->pin[1]);
+            }
+            if(!gates[tmp->pin[2]])
+            {
+               gates[tmp->pin[2]] = new CirUndefGate(tmp->pin[2]);
+            }
+         }
+         if(gates[i]->gateType == PO_GATE)
+         {
+            CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[i]);
+            if(!gates[tmp->id])
+            {
+               gates[tmp->id] = new CirUndefGate(tmp->id);
+            }
+         }
+      }
+   }
+   /******** Parse Fanouts for AIGs ********/
+   for(unsigned int i=0;i<=M;i++) // M is the maximum id of gates
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType == AIG_GATE)
+         {
+            CirAndGate* tmp = reinterpret_cast<CirAndGate*>(gates[i]);
+            if(gates[tmp->pin[1]]) // i1
+            {
+               gates[tmp->pin[1]]->fanout.push_back(i);
+            }
+            if(gates[tmp->pin[2]]) // i2
+            {
+               gates[tmp->pin[2]]->fanout.push_back(i);
+            }
+            #if PARSE_DEBUG
+            //cout << "------------" << endl;
+            #endif
+         }
+      }
+   }
+   /********* Parse Fanouts for POs *********/
+   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
+   {
+      CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[*it]);
+      if(gates[tmp->id])
+      {
+         #if PARSE_DEBUG
+         cout << tmp->id << " fanout " << tmp->n << endl;
+         #endif
+         gates[tmp->id]->fanout.push_back(tmp->n);
       }
    }
    return true;
@@ -341,4 +398,19 @@ CirMgr::printFloatGates() const
 void
 CirMgr::writeAag(ostream& outfile) const
 {
+}
+
+CirGate* CirMgr::getGate(unsigned int gid) const
+{
+   if(gid <= M+O)
+   {
+      if(gates[gid])
+      {
+         return gates[gid];
+      }
+   }
+   #if PARSE_DEBUG
+   cout << "Gate " << gid << " not found" << endl;
+   #endif
+   return NULL;
 }

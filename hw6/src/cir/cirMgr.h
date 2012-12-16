@@ -21,6 +21,8 @@ using namespace std;
 extern CirMgr *cirMgr;
 
 class CirIOGate;
+class CirAndGate;
+class CirConstGate;
 
 // TODO: Define your own data members and member functions
 class CirMgr
@@ -31,7 +33,7 @@ public:
 
    // Access functions
    // return '0' if "gid" corresponds to an undefined gate.
-   CirGate* getGate(unsigned gid) const { return 0; }
+   CirGate* getGate(unsigned gid) const;
 
    // Member functions about circuit construction
    bool readCircuit(const string&);
@@ -57,8 +59,8 @@ private:
    unsigned int O; // number of outputs
    unsigned int A; // number of AND gates
    CirGate** gates;
-   vector<CirIOGate*> PI;
-   vector<CirIOGate*> PO;
+   vector<unsigned int> PI;
+   vector<unsigned int> PO;
 };
 
 #endif // CIR_MGR_H
