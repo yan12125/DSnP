@@ -13,6 +13,7 @@
 #include <cassert>
 #include <cstring>
 #include <string>
+#include <sstream>
 #include "cirMgr.h"
 #include "cirGate.h"
 #include "util.h"
@@ -314,10 +315,12 @@ CirMgr::readCircuit(const string& fileName)
             if(!gates[tmp->pin[1]])
             {
                gates[tmp->pin[1]] = new CirUndefGate(tmp->pin[1]);
+               undefs.push_back(tmp->pin[1]);
             }
             if(!gates[tmp->pin[2]])
             {
                gates[tmp->pin[2]] = new CirUndefGate(tmp->pin[2]);
+               undefs.push_back(tmp->pin[2]);
             }
          }
          if(gates[i]->gateType == PO_GATE)
@@ -326,6 +329,7 @@ CirMgr::readCircuit(const string& fileName)
             if(!gates[tmp->id])
             {
                gates[tmp->id] = new CirUndefGate(tmp->id);
+               undefs.push_back(tmp->id);
             }
          }
       }
@@ -405,6 +409,27 @@ CirMgr::readCircuit(const string& fileName)
          gates[i]->dfsOrder = 0;
       }
    }
+   /******* Analyzing floating gates ********/
+   // Part I: A gate that cannot be reached from any PO (defined but not used, or no fanouts)
+   for(unsigned int i = 1;i <= M;i++)
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType != UNDEF_GATE && gates[i]->fanout.empty())
+         {
+            notInDFS.push_back(i);
+         }
+      }
+   }
+   // Part II: A gate with a floating fanin
+   for(vector<unsigned int>::iterator it = undefs.begin();it != undefs.end();it++)
+   {
+      vector<unsigned int>& fanoutList = gates[*it]->fanout;
+      for(vector<unsigned int>::iterator it2 = fanoutList.begin();it2 != fanoutList.end();it2++)
+      {
+         floatingFanin.push_back(*it2);
+      }
+   }
    return true;
 }
 
@@ -460,7 +485,9 @@ CirMgr::printNetlist() const
             CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[*it]);
             if(tmp->gateType == PO_GATE)
             {
-               cout << " " << (tmp->inverted?"!":"") << tmp->id;
+               cout << " " 
+                    << ((gates[tmp->id]->gateType == UNDEF_GATE)?"*":"")
+                    << (tmp->inverted?"!":"") << tmp->id;
             }
             if(tmp->name != "")
             {
@@ -515,11 +542,61 @@ CirMgr::printPOs() const
 void
 CirMgr::printFloatGates() const
 {
+   if(!floatingFanin.empty())
+   {
+      cout << "Gates with floating fanin(s):";
+      for(vector<unsigned int>::const_iterator it = floatingFanin.begin();it != floatingFanin.end();it++)
+      {
+         cout << ' ' << *it;
+      }
+      cout << "\n";
+   }
+   if(!notInDFS.empty())
+   {
+      cout << "Gates defined but not used  :";
+      for(vector<unsigned int>::const_iterator it = notInDFS.begin();it != notInDFS.end();it++)
+      {
+         cout << ' ' << *it;
+      }
+      cout << "\n";
+   }
 }
 
 void
 CirMgr::writeAag(ostream& outfile) const
 {
+   outfile << "aag " << M << " " << I << " " << L << " " << O << " " << AIGinDFSOrder.size() << "\n";
+   stringstream symbols;
+   int count = 0;
+   for(vector<unsigned int>::const_iterator it = PI.begin();it != PI.end();it++)
+   {
+      CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[*it/2]);
+      outfile << tmp->id*2+tmp->inverted << "\n";
+      if(tmp->name != "")
+      {
+         symbols << 'i' << count << ' ' << tmp->name << "\n";
+         count++;
+      }
+   }
+   count = 0;
+   for(vector<unsigned int>::const_iterator it = PO.begin();it != PO.end();it++)
+   {
+      CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[*it]);
+      outfile << tmp->id*2+tmp->inverted << "\n";
+      if(tmp->name != "")
+      {
+         symbols << 'o' << count << ' ' << tmp->name << "\n";
+         count++;
+      }
+   }
+   for(vector<unsigned int>::const_iterator it = AIGinDFSOrder.begin();it != AIGinDFSOrder.end();it++)
+   {
+      CirAndGate* tmp = reinterpret_cast<CirAndGate*>(gates[*it]);
+      outfile << (tmp->pin[0]*2+tmp->inv[0]) << ' '
+              << (tmp->pin[1]*2+tmp->inv[1]) << ' '
+              << (tmp->pin[2]*2+tmp->inv[2]) << "\n";
+   }
+   outfile << symbols.str(); // should not have \n here because blank lines are not allowed in aag files
 }
 
 CirGate* CirMgr::getGate(unsigned int gid) const
@@ -548,7 +625,12 @@ unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID)
       }
    }
    g->dfsOrder = curID;
-   this->dfsOrder.push_back(g->getID());
+   unsigned int idOfG = g->getID();
+   this->dfsOrder.push_back(idOfG);
+   if(g->gateType == AIG_GATE) // for cirwrite
+   {
+      AIGinDFSOrder.push_back(idOfG);
+   }
    curID++;
    return curID; // return maximum ID
 }

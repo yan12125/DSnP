@@ -61,7 +61,11 @@ private:
    CirGate** gates;
    vector<unsigned int> PI;
    vector<unsigned int> PO;
+   vector<unsigned int> undefs;
    vector<unsigned int> dfsOrder;
+   vector<unsigned int> AIGinDFSOrder;
+   vector<unsigned int> notInDFS;
+   vector<unsigned int> floatingFanin;
 
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int);
