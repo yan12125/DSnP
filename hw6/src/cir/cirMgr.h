@@ -64,7 +64,7 @@ private:
    vector<unsigned int> dfsOrder;
 
    /* helper functions */
-   void buildDFSOrder();
+   unsigned int buildDFSOrder(CirGate*, unsigned int);
 };
 
 #endif // CIR_MGR_H

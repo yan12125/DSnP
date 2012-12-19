@@ -26,13 +26,13 @@ class CirGate
 {
 public:
    friend class CirMgr;
-   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line), dfsOrder(0){}
+   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line), dfsOrder(-1){}
    virtual ~CirGate() {}
 
    // Basic access methods
    string getTypeStr() const;
    unsigned getLineNo() const { return 0; }
-   virtual int getID() const = 0;
+   virtual unsigned int getID() const = 0;
    bool isInvert(CirGate*) const; // for fanout only, because fanin save inverted information in
 
    // Printing functions
@@ -58,7 +58,7 @@ public:
    friend class CirGate;
    CirAndGate(unsigned int, unsigned int, unsigned int, unsigned int);
    ~CirAndGate();
-   virtual int getID() const;
+   virtual unsigned int getID() const;
 protected:
    CirAndGate();
    unsigned int pin[3]; // pins: o, i1, i2 respectively
@@ -74,7 +74,7 @@ public:
    CirIOGate(unsigned int, int, unsigned int); // for PO
    ~CirIOGate();
    void setName(const string&);
-   virtual int getID() const;
+   virtual unsigned int getID() const;
 protected:
    unsigned int id;
    bool inverted;
@@ -89,7 +89,7 @@ public:
    friend class CirGate;
    CirConstGate(bool _value): CirGate(CONST_GATE, 0), value(_value){}
    ~CirConstGate(){};
-   virtual int getID() const;
+   virtual unsigned int getID() const;
 private:
    CirConstGate();
    bool value;
@@ -102,7 +102,7 @@ public:
    friend class CirGate;
    CirUndefGate(unsigned int);
    ~CirUndefGate(){};
-   virtual int getID() const;
+   virtual unsigned int getID() const;
 private:
    CirUndefGate();
    unsigned int id;

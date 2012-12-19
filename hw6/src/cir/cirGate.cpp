@@ -200,7 +200,7 @@ CirAndGate::~CirAndGate()
 {
 }
 
-int CirAndGate::getID() const
+unsigned int CirAndGate::getID() const
 {
    return pin[0];
 }
@@ -231,7 +231,7 @@ void CirIOGate::setName(const string& _name)
    #endif
 }
 
-int CirIOGate::getID() const
+unsigned int CirIOGate::getID() const
 {
    if(this->gateType == PO_GATE)
    {
@@ -243,9 +243,9 @@ int CirIOGate::getID() const
    }
 }
 
-int CirConstGate::getID() const
+unsigned int CirConstGate::getID() const
 {
-   return (value?1:0);
+   return 0; // const gate has ID 0
 }
 
 CirUndefGate::CirUndefGate(unsigned int _id): CirGate(UNDEF_GATE, 0), id(_id)
@@ -255,7 +255,7 @@ CirUndefGate::CirUndefGate(unsigned int _id): CirGate(UNDEF_GATE, 0), id(_id)
    #endif
 }
 
-int CirUndefGate::getID() const
+unsigned int CirUndefGate::getID() const
 {
    return id;
 }

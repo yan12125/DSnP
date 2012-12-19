@@ -391,6 +391,20 @@ CirMgr::readCircuit(const string& fileName)
          }
       }
    }
+   /*********** Build DFS Order *************/
+   unsigned int lastID = 0;
+   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
+   {
+      lastID = buildDFSOrder(gates[*it], lastID);
+   }
+   // clean DFS flags
+   for(unsigned int i = 0;i <= M+O;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->dfsOrder = 0;
+      }
+   }
    return true;
 }
 
@@ -423,16 +437,57 @@ CirMgr::printSummary() const
    const int padding = 9;
    cout << "\nCircuit Statistics\n" // wierd blank? ref!
         << "==================\n"
-        << "  PI   " << setw(padding) << PI.size() << "\n"
-        << "  PO   " << setw(padding) << PO.size() << "\n"
-        << "  AIG  " << setw(padding) << aig_count << "\n"
+        << "  PI   " << right << setw(padding) << PI.size() << "\n"
+        << "  PO   " << right << setw(padding) << PO.size() << "\n"
+        << "  AIG  " << right << setw(padding) << aig_count << "\n"
         << "------------------\n"
-        << "  Total" << setw(padding) << PI.size()+PO.size()+aig_count << endl;
+        << "  Total" << right << setw(padding) << PI.size()+PO.size()+aig_count << endl;
 }
 
 void
 CirMgr::printNetlist() const
 {
+   unsigned int count = 0;
+   cout << "\n";
+   for(vector<unsigned int>::const_iterator it = dfsOrder.begin();it != dfsOrder.end();it++)
+   {
+      cout << "[" << count << "] " << left << setw(4) << gates[*it]->getTypeStr() << gates[*it]->getID();
+      switch(gates[*it]->gateType)
+      {
+         case PI_GATE:
+         case PO_GATE:
+         {
+            CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[*it]);
+            if(tmp->gateType == PO_GATE)
+            {
+               cout << " " << (tmp->inverted?"!":"") << tmp->id;
+            }
+            if(tmp->name != "")
+            {
+               cout << " (" << tmp->name << ")";
+            }
+            cout << "\n";
+            break;
+         }
+         case AIG_GATE:
+         {
+            CirAndGate* tmp = reinterpret_cast<CirAndGate*>(gates[*it]);
+            cout << " " 
+                 << ((gates[tmp->pin[1]]->gateType == UNDEF_GATE)?"*":"")
+                 << (tmp->inv[1]?"!":"") << tmp->pin[1] << " " 
+                 << ((gates[tmp->pin[2]]->gateType == UNDEF_GATE)?"*":"")
+                 << (tmp->inv[2]?"!":"") << tmp->pin[2] << "\n"; // i1 and i2
+            break;
+         }
+         case CONST_GATE:
+            cout << "\n"; // nothing special to do
+            break;
+         default:
+            assert(false); // shouldn't reach here
+            break;
+      }
+      count++;
+   }
 }
 
 void
@@ -482,16 +537,18 @@ CirGate* CirMgr::getGate(unsigned int gid) const
    return NULL;
 }
 
-void CirMgr::buildDFSOrder(CirGate* g, unsigned int curID)
+unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID)
 {
-   bool noMoreGates = true;
-   for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanout.end();it++)
+   for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanin.end();it++)
    {
-      if(g->dfsOrder == 0) // not visited
+      if(gates[(*it)/2]->dfsOrder == -1 &&        // not visited
+         gates[(*it)/2]->gateType != UNDEF_GATE)  // undefined gates are not counted
       {
-         
-         buildDfsOrder(g);
+         curID = buildDFSOrder(gates[(*it)/2], curID);
       }
    }
-   return;
+   g->dfsOrder = curID;
+   this->dfsOrder.push_back(g->getID());
+   curID++;
+   return curID; // return maximum ID
 }
