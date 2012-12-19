@@ -26,7 +26,7 @@ class CirGate
 {
 public:
    friend class CirMgr;
-   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line){}
+   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line), dfsOrder(0){}
    virtual ~CirGate() {}
 
    // Basic access methods
@@ -48,6 +48,7 @@ protected:
    vector<unsigned int> fanout;
    enum GateType gateType;
    unsigned int lineNo;
+   int dfsOrder;
 };
 
 class CirAndGate: public CirGate

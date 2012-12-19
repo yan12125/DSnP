@@ -61,6 +61,10 @@ private:
    CirGate** gates;
    vector<unsigned int> PI;
    vector<unsigned int> PO;
+   vector<unsigned int> dfsOrder;
+
+   /* helper functions */
+   void buildDFSOrder();
 };
 
 #endif // CIR_MGR_H

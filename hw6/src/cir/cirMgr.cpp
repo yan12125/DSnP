@@ -481,3 +481,17 @@ CirGate* CirMgr::getGate(unsigned int gid) const
    #endif
    return NULL;
 }
+
+void CirMgr::buildDFSOrder(CirGate* g, unsigned int curID)
+{
+   bool noMoreGates = true;
+   for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanout.end();it++)
+   {
+      if(g->dfsOrder == 0) // not visited
+      {
+         
+         buildDfsOrder(g);
+      }
+   }
+   return;
+}
