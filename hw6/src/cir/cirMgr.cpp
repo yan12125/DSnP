@@ -157,7 +157,11 @@ CirMgr::CirMgr() :fCir(NULL), hasCircuit(false), M(0), I(0), L(0), O(0), A(0), g
 
 CirMgr::~CirMgr()
 {
-   for(unsigned int i=0;i<M+1;i++)
+   if(!gates) // no circuit exists, might be opening file failed
+   {
+      return;
+   }
+   for(unsigned int i=0;i<M+O+1;i++)
    {
       delete gates[i];
    }
@@ -168,6 +172,13 @@ bool
 CirMgr::readCircuit(const string& fileName)
 {
    fCir = new fstream(fileName.c_str(), ios::in);
+   if(!fCir->good())
+   {
+      cerr << "Cannot open design \"" << fileName << "\"!!" << endl;
+      delete fCir;
+      fCir = NULL;
+      return false;
+   }
    string curLine;
    lineNo = 1;
    unsigned int nAndGates = 0;
@@ -268,6 +279,7 @@ CirMgr::readCircuit(const string& fileName)
                      cout << "Line " << __LINE__ << "\n";
                      break;
                }
+               delete [] name;
                break;
             }
             else
@@ -277,7 +289,7 @@ CirMgr::readCircuit(const string& fileName)
                   cout << "Line " << __LINE__ << "\n";
                }
             }
-            delete name;
+            delete [] name;
          }
          case comment:
             break;
