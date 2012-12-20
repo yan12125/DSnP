@@ -15,6 +15,7 @@
 #include <string>
 #include <sstream>
 #include <errno.h>
+#include <algorithm>
 #include "cirMgr.h"
 #include "cirGate.h"
 #include "util.h"
@@ -229,6 +230,7 @@ CirMgr::readCircuit(const string& fileName)
                }
                PI.reserve(I);
                PO.reserve(O);
+               AIGinDFSOrder.reserve(A);
                curSec = input;
             }
             else
@@ -515,6 +517,9 @@ CirMgr::readCircuit(const string& fileName)
          }
       }
    }
+   sort(notInDFS.begin(), notInDFS.end());
+   // http://stackoverflow.com/questions/1041620/most-efficient-way-to-erase-duplicates-and-sort-a-c-vector
+   notInDFS.erase(unique(notInDFS.begin(), notInDFS.end()), notInDFS.end());
    // Part II: A gate with a floating fanin
    for(vector<unsigned int>::iterator it = undefs.begin();it != undefs.end();it++)
    {
@@ -524,6 +529,8 @@ CirMgr::readCircuit(const string& fileName)
          floatingFanin.push_back(*it2);
       }
    }
+   sort(floatingFanin.begin(), floatingFanin.end());
+   floatingFanin.erase(unique(floatingFanin.begin(), floatingFanin.end()), floatingFanin.end());
    return true;
 }
 

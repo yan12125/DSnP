@@ -67,7 +67,7 @@ CirGate::reportFanin(int level, int indent, bool invert, list<const CirGate*> *r
       return;
    }
    // #1Gp9L6MI (EE_DSnP) by ypf791
-   if(this->gateType == CONST_GATE || this->gateType == PI_GATE)
+   if(this->gateType == CONST_GATE || this->gateType == PI_GATE || this->gateType == UNDEF_GATE)
    {
       level = 0;
    }
