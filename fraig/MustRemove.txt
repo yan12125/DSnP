@@ -1,0 +1,5 @@
+_fraig/bin/fraig
+_fraig/ref
+_fraig/tests.fraig
+_fraig/FraigProject.doc
+_fraig/FraigProject.pdf
