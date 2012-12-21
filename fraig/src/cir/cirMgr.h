@@ -20,16 +20,20 @@ using namespace std;
 
 extern CirMgr *cirMgr;
 
+class CirIOGate;
+class CirAndGate;
+class CirConstGate;
+
 // TODO: Define your own data members and member functions
 class CirMgr
 {
 public:
-   CirMgr(){}
-   ~CirMgr() {}
+   CirMgr();
+   ~CirMgr();
 
    // Access functions
    // return '0' if "gid" corresponds to an undefined gate.
-   CirGate* getGate(unsigned gid) const { return 0; }
+   CirGate* getGate(unsigned gid) const;
 
    // Member functions about circuit construction
    bool readCircuit(const string&);
@@ -57,9 +61,30 @@ public:
    void printFECPairs() const;
    void writeAag(ostream&) const;
 
+   operator int()
+   {
+      return hasCircuit?1:0;
+   }
 private:
    ofstream           *_simLog;
-
+   fstream* fCir;
+   bool hasCircuit;
+   unsigned int M; // maximum variable index
+   unsigned int I; // number of inputs
+   unsigned int L; // number of latches
+   unsigned int O; // number of outputs
+   unsigned int A; // number of AND gates
+   CirGate** gates;
+   vector<unsigned int> PI;
+   vector<unsigned int> PO;
+   vector<unsigned int> undefs;
+   vector<unsigned int> dfsOrder;
+   vector<unsigned int> AIGinDFSOrder;
+   vector<unsigned int> notInDFS;
+   vector<unsigned int> floatingFanin;
+   
+   /* helper functions */
+   unsigned int buildDFSOrder(CirGate*, unsigned int);
 };
 
 #endif // CIR_MGR_H

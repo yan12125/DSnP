@@ -1,4 +1,4 @@
-PKGFLAG   =
+PKGFLAG   = -w
 EXTHDRS   = sat.h Solver.h SolverTypes.h VarOrder.h Proof.h Global.h \
             File.h Heap.h Sort.h
 
