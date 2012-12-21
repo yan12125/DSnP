@@ -13,6 +13,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <set>
 
 using namespace std;
 
@@ -79,12 +80,14 @@ private:
    vector<unsigned int> PO;
    vector<unsigned int> undefs;
    vector<unsigned int> dfsOrder;
+   vector<unsigned int> dfsOrderWithUndefs;
    vector<unsigned int> AIGinDFSOrder;
-   vector<unsigned int> notInDFS;
+   vector<unsigned int> notInDFS;      // defined but not used
+   set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
    
    /* helper functions */
-   unsigned int buildDFSOrder(CirGate*, unsigned int);
+   unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
 };
 
 #endif // CIR_MGR_H

@@ -24,6 +24,7 @@ using namespace std;
 
 #define PARSE_DEBUG 0
 #define ERROR_DEBUG 0
+#define DFS_DEBUG 0
 
 // TODO: Implement memeber functions for class CirMgr
 
@@ -492,17 +493,31 @@ CirMgr::readCircuit(const string& fileName)
       }
    }
    /*********** Build DFS Order *************/
+   // build a version with undefs, using in sweep
    unsigned int lastID = 0;
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
-      lastID = buildDFSOrder(gates[*it], lastID);
+      lastID = buildDFSOrder(gates[*it], lastID, &dfsOrderWithUndefs, true);
    }
    // clean DFS flags
    for(unsigned int i = 0;i <= M+O;i++)
    {
       if(gates[i])
       {
-         gates[i]->dfsOrder = 0;
+         gates[i]->dfsOrder = -1;
+      }
+   }
+   lastID = 0;
+   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
+   {
+      lastID = buildDFSOrder(gates[*it], lastID, &dfsOrder, false);
+   }
+   // clean DFS flags
+   for(unsigned int i = 0;i <= M+O;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->dfsOrder = -1;
       }
    }
    /******* Analyzing floating gates ********/
@@ -531,6 +546,18 @@ CirMgr::readCircuit(const string& fileName)
    }
    sort(floatingFanin.begin(), floatingFanin.end());
    floatingFanin.erase(unique(floatingFanin.begin(), floatingFanin.end()), floatingFanin.end());
+   /********* Build not in DFS list *********/
+   for(unsigned int i=1;i<=M;i++)
+   {
+      if(gates[i])
+      {
+         notInDFS2.insert(i);
+      }
+   }
+   for(vector<unsigned int>::iterator it = dfsOrderWithUndefs.begin();it != dfsOrderWithUndefs.end();it++)
+   {
+      notInDFS2.erase(*it);
+   }
    return true;
 }
 
@@ -715,22 +742,30 @@ CirGate* CirMgr::getGate(unsigned int gid) const
    return NULL;
 }
 
-unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID)
+unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID, vector<unsigned int>* target, bool includeUndefs)
 {
+   #if DFS_DEBUG
+   cout << g->getID() << "\n";
+   #endif
    for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanin.end();it++)
    {
       if(gates[(*it)/2]->dfsOrder == -1 &&        // not visited
-         gates[(*it)/2]->gateType != UNDEF_GATE)  // undefined gates are not counted
+         (includeUndefs?true:(gates[(*it)/2]->gateType != UNDEF_GATE)))  // undefined gates are not counted
       {
-         curID = buildDFSOrder(gates[(*it)/2], curID);
+         curID = buildDFSOrder(gates[(*it)/2], curID, target, includeUndefs);
       }
    }
    g->dfsOrder = curID;
    unsigned int idOfG = g->getID();
-   this->dfsOrder.push_back(idOfG);
-   if(g->gateType == AIG_GATE) // for cirwrite
+   target->push_back(idOfG);
+   // buildDFSOrder was called 2 times in readCircuit, but we only need to 
+   // build it once. It might be buggy, better method to be done
+   if(!includeUndefs)
    {
-      AIGinDFSOrder.push_back(idOfG);
+      if(g->gateType == AIG_GATE) // for cirwrite
+      {
+         AIGinDFSOrder.push_back(idOfG);
+      }
    }
    curID++;
    return curID; // return maximum ID

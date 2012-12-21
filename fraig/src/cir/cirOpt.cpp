@@ -7,6 +7,7 @@
 ****************************************************************************/
 
 #include <cassert>
+#include <set>
 #include "cirMgr.h"
 #include "cirGate.h"
 #include "util.h"
@@ -28,6 +29,35 @@ using namespace std;
 void
 CirMgr::sweep()
 {
+   set<unsigned int> removed; // use set instead of vector... n^2 => n*log(n)
+   for(set<unsigned int>::iterator it = notInDFS2.begin();it != notInDFS2.end();it++)
+   {
+      if(gates[*it]->gateType != PI_GATE)
+      {
+         cout << "Sweeping: " << gates[*it]->getTypeStr() << "(" << gates[*it]->getID() << ") removed...\n";
+         removed.insert(*it);
+      }
+   }
+   // AIGinDFSOrder doess not include gates not reachable from POs, so not processing it
+   for(vector<unsigned int>::iterator it = undefs.begin();it != undefs.end();)
+   {
+      if(removed.find(*it) != removed.end())
+      {
+         it = undefs.erase(it);
+      }
+      else
+      {
+         it++;
+      }
+   }
+   for(unsigned int i=1;i<=M;i++)
+   {
+      if(removed.find(i) != removed.end())
+      {
+         delete gates[i];
+         gates[i] = NULL;
+      }
+   }
 }
 
 // Recursively simplifying from POs;

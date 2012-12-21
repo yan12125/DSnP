@@ -50,7 +50,7 @@ protected:
    vector<unsigned int> fanout;
    enum GateType gateType;
    unsigned int lineNo;
-   int dfsOrder;
+   int dfsOrder;  // not visited is -1, NOT 0!!!
 };
 
 class CirAndGate: public CirGate
