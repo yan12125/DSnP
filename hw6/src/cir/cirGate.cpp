@@ -50,16 +50,26 @@ CirGate::reportGate() const
    cout << "==================================================\n";
 }
 
-void
-CirGate::reportFanin(int level, int indent, bool invert, list<const CirGate*> *reported) const
+void CirGate::reportFanin(int level) const
 {
    assert (level >= 0);
-   bool topLevel = false;
-   if(!reported)
-   {
-      topLevel = true;
-      reported = new list<const CirGate*>;
-   }
+   list<const CirGate*> reported;
+   reportFaninInternal(level, 0, false, &reported);
+   reported.clear();
+}
+
+void CirGate::reportFanout(int level) const
+{
+   assert (level >= 0);
+   list<const CirGate*> reported;
+   reportFanoutInternal(level, 0, false, &reported);
+   reported.clear();
+}
+
+void
+CirGate::reportFaninInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const
+{
+   assert (level >= 0);
    cout << string(indent, ' ') << (invert?"!":"") << this->getTypeStr() << ' ' << this->getID();
    if(level == 0)
    {
@@ -87,17 +97,13 @@ CirGate::reportFanin(int level, int indent, bool invert, list<const CirGate*> *r
       CirGate* g = cirMgr->getGate((*it)/2);
       if(g)
       {
-         g->reportFanin(level-1, indent+2, (*it)%2, reported);
+         g->reportFaninInternal(level-1, indent+2, (*it)%2, reported);
       }
-   }
-   if(topLevel)
-   {
-      delete reported;
    }
 }
 
 void
-CirGate::reportFanout(int level, int indent, bool invert, list<const CirGate*> *reported) const
+CirGate::reportFanoutInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const
 {
    assert (level >= 0);
    bool topLevel = false;
@@ -128,7 +134,7 @@ CirGate::reportFanout(int level, int indent, bool invert, list<const CirGate*> *
       CirGate* g = cirMgr->getGate(*it);
       if(g)
       {
-         g->reportFanout(level-1, indent+2, this->isInvert(g), reported);
+         g->reportFanoutInternal(level-1, indent+2, this->isInvert(g), reported);
       }
    }
    if(topLevel)

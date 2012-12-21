@@ -23,7 +23,7 @@
 using namespace std;
 
 #define PARSE_DEBUG 0
-#define ERROR_DEBUG 1
+#define ERROR_DEBUG 0
 
 // TODO: Implement memeber functions for class CirMgr
 

@@ -37,8 +37,10 @@ public:
 
    // Printing functions
    void reportGate() const;
-   void reportFanin(int level, int indent = 0, bool invert = false, list<const CirGate*> *reported = NULL) const;
-   void reportFanout(int level, int indent = 0, bool invert = false, list<const CirGate*> *reported = NULL) const;
+   void reportFanin(int level) const;
+   void reportFanout(int level) const;
+   void reportFaninInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const;
+   void reportFanoutInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const;
 
 private:
    CirGate(){};
