@@ -194,7 +194,7 @@ CirMgr::readCircuit(const string& fileName)
    enum { header, input, latch, output, andGate, symbol, comment } curSec = header;
    while(1)
    {
-      if(fCir->eof()) // premature ending
+      /*if(fCir->eof()) // premature ending
       {
          #if ERROR_DEBUG
          cout << "Line " << __LINE__ << "\n";
@@ -205,9 +205,9 @@ CirMgr::readCircuit(const string& fileName)
          delete fCir;
          fCir = NULL;
          break;
-      }
+      }*/
       getline(*fCir, curLine);
-      if(curLine.empty() || curLine[0] == ' ' || curLine[curLine.size()-1] == ' ' || curLine.find("  ") != string::npos)
+      if(curLine[0] == ' ' || curLine[curLine.size()-1] == ' ' || curLine.find("  ") != string::npos)
       {
          #if ERROR_DEBUG
          cout << "Line " << __LINE__ << "\n";

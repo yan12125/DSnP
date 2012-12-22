@@ -42,6 +42,10 @@ public:
    void reportFaninInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const;
    void reportFanoutInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const;
 
+   void removeFanout(bool* removed); // used in sweep
+   void replaceFanin(unsigned int orig, unsigned int repl); // used in opt
+   void replaceFanout(unsigned int orig, vector<unsigned int>* _fanout); // used in opt
+
 private:
    CirGate(){};
 

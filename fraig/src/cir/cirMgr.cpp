@@ -208,7 +208,7 @@ CirMgr::readCircuit(const string& fileName)
          break;
       }
       getline(*fCir, curLine);
-      if(curLine.empty() || curLine[0] == ' ' || curLine[curLine.size()-1] == ' ' || curLine.find("  ") != string::npos)
+      if(curLine[0] == ' ' || curLine[curLine.size()-1] == ' ' || curLine.find("  ") != string::npos)
       {
          #if ERROR_DEBUG
          cout << "Line " << __LINE__ << "\n";
@@ -493,59 +493,11 @@ CirMgr::readCircuit(const string& fileName)
       }
    }
    /*********** Build DFS Order *************/
-   // build a version with undefs, using in sweep
-   unsigned int lastID = 0;
-   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
-   {
-      lastID = buildDFSOrder(gates[*it], lastID, &dfsOrderWithUndefs, true);
-   }
-   // clean DFS flags
-   for(unsigned int i = 0;i <= M+O;i++)
-   {
-      if(gates[i])
-      {
-         gates[i]->dfsOrder = -1;
-      }
-   }
-   lastID = 0;
-   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
-   {
-      lastID = buildDFSOrder(gates[*it], lastID, &dfsOrder, false);
-   }
-   // clean DFS flags
-   for(unsigned int i = 0;i <= M+O;i++)
-   {
-      if(gates[i])
-      {
-         gates[i]->dfsOrder = -1;
-      }
-   }
+   buildDFSwrapper();
    /******* Analyzing floating gates ********/
    // Part I: A gate that cannot be reached from any PO (defined but not used, or no fanouts)
-   for(unsigned int i = 1;i <= M;i++)
-   {
-      if(gates[i])
-      {
-         if(gates[i]->gateType != UNDEF_GATE && gates[i]->fanout.empty())
-         {
-            notInDFS.push_back(i);
-         }
-      }
-   }
-   sort(notInDFS.begin(), notInDFS.end());
-   // http://stackoverflow.com/questions/1041620/most-efficient-way-to-erase-duplicates-and-sort-a-c-vector
-   notInDFS.erase(unique(notInDFS.begin(), notInDFS.end()), notInDFS.end());
    // Part II: A gate with a floating fanin
-   for(vector<unsigned int>::iterator it = undefs.begin();it != undefs.end();it++)
-   {
-      vector<unsigned int>& fanoutList = gates[*it]->fanout;
-      for(vector<unsigned int>::iterator it2 = fanoutList.begin();it2 != fanoutList.end();it2++)
-      {
-         floatingFanin.push_back(*it2);
-      }
-   }
-   sort(floatingFanin.begin(), floatingFanin.end());
-   floatingFanin.erase(unique(floatingFanin.begin(), floatingFanin.end()), floatingFanin.end());
+   buildFloatingFanin();
    /********* Build not in DFS list *********/
    for(unsigned int i=1;i<=M;i++)
    {
@@ -769,6 +721,75 @@ unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID, vector<unsign
    }
    curID++;
    return curID; // return maximum ID
+}
+
+
+void CirMgr::buildDFSwrapper()
+{
+   dfsOrderWithUndefs.clear();
+   dfsOrder.clear();
+   AIGinDFSOrder.clear();
+   // build a version with undefs, using in sweep
+   unsigned int lastID = 0;
+   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
+   {
+      lastID = buildDFSOrder(gates[*it], lastID, &dfsOrderWithUndefs, true);
+   }
+   // clean DFS flags
+   for(unsigned int i = 0;i <= M+O;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->dfsOrder = -1;
+      }
+   }
+   // build a normal version
+   lastID = 0;
+   for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
+   {
+      lastID = buildDFSOrder(gates[*it], lastID, &dfsOrder, false);
+   }
+   // clean DFS flags
+   for(unsigned int i = 0;i <= M+O;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->dfsOrder = -1;
+      }
+   }
+}
+
+void CirMgr::buildFloatingFanin()
+{
+   floatingFanin.clear();
+   for(vector<unsigned int>::iterator it = undefs.begin();it != undefs.end();it++)
+   {
+      vector<unsigned int>& fanoutList = gates[*it]->fanout;
+      for(vector<unsigned int>::iterator it2 = fanoutList.begin();it2 != fanoutList.end();it2++)
+      {
+         floatingFanin.push_back(*it2);
+      }
+   }
+   sort(floatingFanin.begin(), floatingFanin.end());
+   floatingFanin.erase(unique(floatingFanin.begin(), floatingFanin.end()), floatingFanin.end());
+}
+
+void CirMgr::buildDefinedButNotUsed()
+{
+   notInDFS.clear();
+   for(unsigned int i = 1;i <= M;i++)
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType != UNDEF_GATE && gates[i]->fanout.empty())
+         {
+            notInDFS.push_back(i);
+         }
+      }
+   }
+   sort(notInDFS.begin(), notInDFS.end());
+   // http://stackoverflow.com/questions/1041620/most-efficient-way-to-erase-duplicates-and-sort-a-c-vector
+   notInDFS.erase(unique(notInDFS.begin(), notInDFS.end()), notInDFS.end());
 }
 
 void

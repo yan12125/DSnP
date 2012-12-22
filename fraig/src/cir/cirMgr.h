@@ -88,6 +88,9 @@ private:
    
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
+   void buildDFSwrapper();
+   void buildFloatingFanin();
+   void buildDefinedButNotUsed();
 };
 
 #endif // CIR_MGR_H
