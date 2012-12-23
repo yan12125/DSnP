@@ -91,6 +91,7 @@ private:
    void buildDFSwrapper();
    void buildFloatingFanin();
    void buildDefinedButNotUsed();
+   void buildNotInDFS2();
 };
 
 #endif // CIR_MGR_H

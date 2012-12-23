@@ -110,6 +110,7 @@ CirMgr::sweep()
    sort(notInDFS.begin(), notInDFS.end());
    notInDFS.erase(unique(notInDFS.begin(), notInDFS.end()), notInDFS.end());
    delete [] removed;
+   buildNotInDFS2();
 }
 
 // Recursively simplifying from POs;

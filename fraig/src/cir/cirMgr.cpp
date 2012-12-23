@@ -499,17 +499,7 @@ CirMgr::readCircuit(const string& fileName)
    // Part II: A gate with a floating fanin
    buildFloatingFanin();
    /********* Build not in DFS list *********/
-   for(unsigned int i=1;i<=M;i++)
-   {
-      if(gates[i])
-      {
-         notInDFS2.insert(i);
-      }
-   }
-   for(vector<unsigned int>::iterator it = dfsOrderWithUndefs.begin();it != dfsOrderWithUndefs.end();it++)
-   {
-      notInDFS2.erase(*it);
-   }
+   buildNotInDFS2();
    return true;
 }
 
@@ -790,6 +780,22 @@ void CirMgr::buildDefinedButNotUsed()
    sort(notInDFS.begin(), notInDFS.end());
    // http://stackoverflow.com/questions/1041620/most-efficient-way-to-erase-duplicates-and-sort-a-c-vector
    notInDFS.erase(unique(notInDFS.begin(), notInDFS.end()), notInDFS.end());
+}
+
+void CirMgr::buildNotInDFS2()
+{
+   notInDFS2.clear();
+   for(unsigned int i=1;i<=M;i++)
+   {
+      if(gates[i])
+      {
+         notInDFS2.insert(i);
+      }
+   }
+   for(vector<unsigned int>::iterator it = dfsOrderWithUndefs.begin();it != dfsOrderWithUndefs.end();it++)
+   {
+      notInDFS2.erase(*it);
+   }
 }
 
 void
