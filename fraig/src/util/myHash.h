@@ -13,6 +13,8 @@
 
 using namespace std;
 
+#define HASH_DEBUG 0
+
 //--------------------
 // Define Hash classes
 //--------------------
@@ -37,8 +39,8 @@ class Hash
 typedef pair<HashKey, HashData> HashNode;
 
 public:
-   Hash() : _numBuckets(0), _buckets(0) {}
-   Hash(size_t b) : _numBuckets(0), _buckets(0) { init(b); }
+   Hash() : _numBuckets(9973), _buckets(0) { init(9973); }
+   Hash(size_t b) : _numBuckets(b), _buckets(0) { init(b); }
    ~Hash() { reset(); }
 
    // TODO: implement the Hash<HashKey, HashData>::iterator
@@ -57,36 +59,228 @@ public:
       friend class Hash<HashKey, HashData>;
 
    public:
-
+      iterator() : container(NULL), curBucket(NULL)
+      {
+      }
+      iterator(const Hash* c, vector<HashNode>* b, typename vector<HashNode>::iterator it)
+         : container(c), curBucket(b), itInternal(it)
+      {
+      }
+      ~iterator()
+      {
+      }
+      const HashData& operator*() const
+      {
+         return itInternal->second;
+      }
+      HashData& operator*()
+      {
+         return itInternal->second;
+      }
+      iterator& operator++() // prefix
+      {
+         while(1)
+         {
+            if(itInternal+1 == curBucket->end())
+            {
+               if((curBucket = container->getNextAvailBucket(curBucket)) != NULL)
+               {
+                  itInternal = curBucket->begin();
+                  break;
+               }
+               else
+               {
+                  iterator tmp = container->end();
+                  this->curBucket = tmp.curBucket;
+                  this->itInternal = tmp.itInternal;
+                  break;
+               }
+            }
+            else
+            {
+               itInternal++;
+               break;
+            }
+         }
+         #if HASH_DEBUG
+         cout << __func__ << ": curBucket = " << curBucket - container->getBuckets() << ", itInternal =" << itInternal->second << endl;
+         #endif
+         return *this;
+      }
+      iterator operator++(int) // suffix
+      {
+         iterator temp = *this;
+         this->operator++(); // call prefix version
+         return temp;
+      }
+      iterator& operator--()
+      {
+         while(1)
+         {
+            if(itInternal == curBucket->begin())
+            {
+               if((curBucket = container->getPrevAvailBucket(curBucket)) != NULL)
+               {
+                  itInternal = curBucket->end()-1;
+                  break;
+               }
+               else
+               {
+                  iterator tmp = container->begin();
+                  this->curBucket = tmp.curBucket;
+                  this->itInternal = tmp.itInternal;
+                  break;
+               }
+            }
+            else
+            {
+               itInternal--;
+               break;
+            }
+         }
+         #if HASH_DEBUG
+         cout << __func__ << ": curBucket = " << curBucket - container->getBuckets() << ", itInternal =" << itInternal->second << endl;
+         #endif
+         return *this;
+      }
+      iterator operator--(int)
+      {
+         iterator temp = *this;
+         this->operator--();
+         return temp;
+      }
+      iterator& operator=(const iterator& i)
+      {
+         this->container = i->container;
+         this->curBucket = i->curBucket;
+         this->itInternal = i->itInternal;
+      }
+      bool operator!=(const iterator& i) const
+      {
+         return this->itInternal != i.itInternal;
+      }
+      bool operator==(const iterator& i) const
+      {
+         return this->itInternal == i.itInternal;
+      }
    private:
+      const Hash<HashKey, HashData>* container;
+      vector<HashNode>* curBucket;
+      typename vector<HashNode>::iterator itInternal;
    };
 
    // TODO: implement these functions
    //
    // Point to the first valid data
-   iterator begin() const { return iterator(); }
+   iterator begin() const
+   {
+      vector<HashNode>* availBucket = _buckets->empty()?getNextAvailBucket(_buckets):_buckets;
+      if(availBucket == NULL)
+      {
+         vector<HashNode>* lastBucket = _buckets + _numBuckets - 1;
+         #if HASH_DEBUG
+         cout << __func__ << ": bucket = " << lastBucket - _buckets << ", no data" << endl;
+         #endif
+         return iterator(this, lastBucket, lastBucket->end());
+      }
+      #if HASH_DEBUG
+      cout << __func__ << ": bucket = " << availBucket - _buckets << ", data =" << availBucket->begin()->second << endl;
+      #endif
+      return iterator(this, availBucket, availBucket->begin());
+   }
    // Pass the end
-   iterator end() const { return iterator(); }
+   iterator end() const
+   {
+      vector<HashNode>* lastBucket = _buckets + _numBuckets - 1;
+      vector<HashNode>* availBucket = lastBucket->empty()?getPrevAvailBucket(lastBucket):lastBucket;
+      if(availBucket == NULL)
+      {
+         #if HASH_DEBUG
+         cout << __func__ << ": bucket = " << lastBucket - _buckets << ", no data" << endl;
+         #endif
+         return iterator(this, lastBucket, lastBucket->end());
+      }
+      #if HASH_DEBUG
+      cout << __func__ << ": bucket = " << availBucket - _buckets << ", data =" << availBucket->begin()->second << endl;
+      #endif
+      return iterator(this, availBucket, availBucket->end());
+   }
    // return true if no valid data
-   bool empty() const { return true; }
+   bool empty() const
+   {
+      for(unsigned int i = 0;i < _numBuckets;i++)
+      {
+         if(!_buckets[i].empty())
+         {
+            return false;
+         }
+      }
+      return true;
+   }
    // number of valid data
-   size_t size() const { size_t s = 0; return s; }
+   size_t size() const
+   {
+      size_t s = 0;
+      for(unsigned int i = 0;i < _numBuckets;i++)
+      {
+         s += _buckets[i].size();
+      }
+      return s;
+   }
    size_t numBuckets() const { return _numBuckets; }
 
    vector<HashNode>& operator [] (size_t i) { return _buckets[i]; }
    const vector<HashNode>& operator [](size_t i) const { return _buckets[i]; }
 
-   void init(size_t b) { }
-   void reset() { }
+   void init(size_t b)
+   {
+      _buckets = new vector<HashNode>[b];
+   }
+   void reset()
+   {
+      delete [] _buckets;
+   }
 
    // check if k is in the hash...
    // if yes, update n and return true;
    // else return false;
-   bool check(const HashKey& k, HashData& n) { return false; }
+   bool check(const HashKey& k, HashData& n)
+   {
+      vector<HashNode>* curBucket = _buckets + k() % _numBuckets;
+      if(curBucket->empty())
+      {
+         return false;
+      }
+      for(typename vector<HashNode>::const_iterator it = curBucket->begin();it != curBucket->end();it++)
+      {
+         if(it->first == k)
+         {
+            n = it->second;
+            return true;
+         }
+      }
+      return false;
+   }
 
    // return true if inserted successfully (i.e. k is not in the hash)
    // return false is k is already in the hash ==> will not insert
-   bool insert(const HashKey& k, const HashData& d) { return true; }
+   bool insert(const HashKey& k, const HashData& d)
+   {
+      vector<HashNode>* curBucket = _buckets + k() % _numBuckets;
+      for(typename vector<HashNode>::iterator it = curBucket->begin();it != curBucket->end();it++)
+      {
+         if(it->first == k)
+         {
+            return false;
+         }
+      }
+      if(curBucket->size() == curBucket->capacity())
+      {
+         curBucket->reserve(2*curBucket->capacity());
+      }
+      curBucket->push_back(make_pair(k, d));
+      return true;
+   }
 
    // return true if inserted successfully (i.e. k is not in the hash)
    // return false is k is already in the hash ==> still do the insertion
@@ -94,6 +288,65 @@ public:
 
    // Need to be sure that k is not in the hash
    void forceInsert(const HashKey& k, const HashData& d) { }
+
+private:
+   /*
+    * Helper functions
+    * */
+   vector<HashNode>* getNextAvailBucket(vector<HashNode>* b) const // for use of iterator only
+   {
+      if(b == _buckets + _numBuckets - 1)
+      {
+         return NULL;
+      }
+      for(vector<HashNode>* cur = b+1;cur <= _buckets + _numBuckets - 1;cur++)
+      {
+         if(!cur->empty())
+         {
+            return cur;
+         }
+      }
+      return NULL;
+   }
+
+   vector<HashNode>* getPrevAvailBucket(vector<HashNode>* b) const // for use of iterator only
+   {
+      if(b == _buckets)
+      {
+         return NULL;
+      }
+      for(vector<HashNode>* cur = b-1;cur >= _buckets;cur--)
+      {
+         if(!cur->empty())
+         {
+            return cur;
+         }
+      }
+      return NULL;
+   }
+   #if HASH_DEBUG
+   vector<HashNode>* getBuckets() const
+   {
+      return _buckets;
+   }
+   #endif
+
+public:
+   void printAll() const
+   {
+      for(unsigned int i = 0;i < _numBuckets;i++)
+      {
+         cout << "[" << i << "] ";
+         if(!_buckets[i].empty())
+         {
+            for(typename vector<HashNode>::iterator it = _buckets[i].begin();it != _buckets[i].end();it++)
+            {
+               cout << it->second << " ";
+            }
+         }
+         cout << "\n";
+      }
+   }
 
 private:
    // Do not add any extra data member

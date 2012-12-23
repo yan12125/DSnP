@@ -23,7 +23,7 @@
 using namespace std;
 
 #define PARSE_DEBUG 0
-#define ERROR_DEBUG 0
+#define ERROR_DEBUG 1
 #define DFS_DEBUG 0
 
 // TODO: Implement memeber functions for class CirMgr
@@ -54,7 +54,6 @@ enum CirParseError {
    NUM_TOO_BIG,
 
    DUMMY_END, 
-   SYNTAX_ERROR = -1
 };
 
 /**************************************/
@@ -149,9 +148,6 @@ parseError(CirParseError err)
          cerr << "[ERROR] Line " << lineNo+1 << ": " << errMsg
               << " is too big (" << errInt << ")!!" << endl;
          break;
-      case SYNTAX_ERROR:
-         cerr << "Syntax error in line " << lineNo << endl;
-         break;
       default: break;
    }
    return false;
@@ -195,28 +191,7 @@ CirMgr::readCircuit(const string& fileName)
    enum { header, input, latch, output, andGate, symbol, comment } curSec = header;
    while(1)
    {
-      if(fCir->eof()) // premature ending
-      {
-         #if ERROR_DEBUG
-         cout << "Line " << __LINE__ << "\n";
-         #endif
-         errorOnParse = true;
-         parseError(SYNTAX_ERROR);
-         fCir->close();
-         delete fCir;
-         fCir = NULL;
-         break;
-      }
       getline(*fCir, curLine);
-      if(curLine[0] == ' ' || curLine[curLine.size()-1] == ' ' || curLine.find("  ") != string::npos)
-      {
-         #if ERROR_DEBUG
-         cout << "Line " << __LINE__ << "\n";
-         #endif
-         errorOnParse = true;
-         parseError(SYNTAX_ERROR);
-         break;
-      }
       switch(curSec)
       {
          case header:
@@ -234,15 +209,6 @@ CirMgr::readCircuit(const string& fileName)
                AIGinDFSOrder.reserve(A);
                curSec = input;
             }
-            else
-            {
-               #if ERROR_DEBUG
-               cout << "Line " << __LINE__ << "\n";
-               #endif
-               errorOnParse = true;
-               parseError(SYNTAX_ERROR);
-               curSec = comment;
-            }
             break;
          case input:
             if(PI.size() == I)
@@ -252,16 +218,6 @@ CirMgr::readCircuit(const string& fileName)
             else
             {
                int id = strtol(curLine.c_str(), NULL, 10);
-               if(errno != 0)
-               {
-                  #if ERROR_DEBUG
-                  cout << "Line " << __LINE__ << "\n";
-                  #endif
-                  errorOnParse = true;
-                  parseError(SYNTAX_ERROR);
-                  curSec = comment;
-                  break;
-               }
                gates[id/2] = new CirIOGate(id, lineNo);
                PI.push_back(id);
                break;
@@ -277,16 +233,6 @@ CirMgr::readCircuit(const string& fileName)
             else
             {
                int id = strtol(curLine.c_str(), NULL, 10);
-               if(errno != 0)
-               {
-                  #if ERROR_DEBUG
-                  cout << "Line " << __LINE__ << "\n";
-                  #endif
-                  errorOnParse = true;
-                  parseError(SYNTAX_ERROR);
-                  curSec = comment;
-                  break;
-               }
                int pos = M+PO.size()+1;
                gates[pos] = new CirIOGate(id, pos, lineNo);
                PO.push_back(pos);
@@ -306,15 +252,6 @@ CirMgr::readCircuit(const string& fileName)
                   gates[o/2] = new CirAndGate(o, i1, i2, lineNo);
                   nAndGates++;
                }
-               else
-               {
-                  #if ERROR_DEBUG
-                  cout << "Line " << __LINE__ << "\n";
-                  #endif
-                  errorOnParse = true;
-                  parseError(SYNTAX_ERROR);
-                  curSec = comment;
-               }
                break;
             }
          }
@@ -332,35 +269,12 @@ CirMgr::readCircuit(const string& fileName)
                switch(type)
                {
                   case 'i': // input gate
-                     if(id >= PI.size())
-                     {
-                        #if ERROR_DEBUG
-                        cout << "Line " << __LINE__ << "\n";
-                        #endif
-                        errorOnParse = true;
-                        parseError(SYNTAX_ERROR);
-                        break;
-                     }
                      reinterpret_cast<CirIOGate*>(gates[PI[id]/2])->setName(name);
                      break;
                   case 'o': // output gate
-                     if(id >= PO.size())
-                     {
-                        #if ERROR_DEBUG
-                        cout << "Line " << __LINE__ << "\n";
-                        #endif
-                        errorOnParse = true;
-                        parseError(SYNTAX_ERROR);
-                        break;
-                     }
                      reinterpret_cast<CirIOGate*>(gates[PO[id]])->setName(name);
                      break;
                   default:
-                     #if ERROR_DEBUG
-                     cout << "Line " << __LINE__ << "\n";
-                     #endif
-                     errorOnParse = true;
-                     parseError(SYNTAX_ERROR);
                      break;
                }
                delete [] name;
@@ -368,14 +282,6 @@ CirMgr::readCircuit(const string& fileName)
             }
             else
             {
-               if(!fCir->eof()) // no more symbols
-               {
-                  #if ERROR_DEBUG
-                  cout << "Line " << __LINE__ << "\n";
-                  #endif
-                  errorOnParse = true;
-                  parseError(SYNTAX_ERROR);
-               }
             }
             delete [] name;
          }

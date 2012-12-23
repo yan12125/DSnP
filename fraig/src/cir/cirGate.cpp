@@ -242,6 +242,23 @@ void CirGate::replaceFanout(unsigned int orig, vector<unsigned int>* _fanout)
    #endif
 }
 
+void CirGate::removeFanin(unsigned int target)
+{
+   for(vector<unsigned int>::iterator it = fanin.begin();it != fanin.end();)
+   {
+      if(*it/2 == target)
+      {
+         fanin.erase(it);
+         return;
+      }
+      else
+      {
+         it++;
+      }
+   }
+   assert(false); // specified gate must be in fanin
+}
+
 string CirGate::getTypeStr() const
 {
    switch(this->gateType)

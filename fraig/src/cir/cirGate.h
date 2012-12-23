@@ -18,6 +18,7 @@
 using namespace std;
 
 class CirGate;
+class FaninKey;
 
 //------------------------------------------------------------------------
 //   Define classes
@@ -26,6 +27,7 @@ class CirGate
 {
 public:
    friend class CirMgr;
+   friend class FaninKey;
    CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line), dfsOrder(-1){}
    virtual ~CirGate() {}
 
@@ -43,8 +45,9 @@ public:
    void reportFanoutInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const;
 
    void removeFanout(bool* removed); // used in sweep
+   void removeFanin(unsigned int); // used in strash
    void replaceFanin(unsigned int orig, unsigned int repl); // used in opt
-   void replaceFanout(unsigned int orig, vector<unsigned int>* _fanout); // used in opt
+   void replaceFanout(unsigned int orig, vector<unsigned int>* _fanout); // used in opt, strash
 
 private:
    CirGate(){};
