@@ -47,6 +47,7 @@ public:
    void randomSim();
    void fileSim(ifstream&);
    void setSimLog(ofstream *logFile) { _simLog = logFile; }
+   void realSim(unsigned char* simValues[32]);
 
    // Member functions about fraig
    void strash();
