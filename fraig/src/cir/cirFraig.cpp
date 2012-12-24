@@ -115,6 +115,9 @@ CirMgr::strash()
             }
             delete gates[*it];
             gates[*it] = NULL;
+            #if HASH_DEBUG
+            gatesHash->printAll();
+            #endif
          }
       }
    }

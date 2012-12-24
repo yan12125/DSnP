@@ -363,7 +363,7 @@ public:
          {
             for(typename vector<HashNode>::iterator it = _buckets[i].begin();it != _buckets[i].end();it++)
             {
-               cout << it->second << " ";
+               cout << it->second << "(" << it->first() << ")" << " ";
             }
          }
          cout << "\n";
