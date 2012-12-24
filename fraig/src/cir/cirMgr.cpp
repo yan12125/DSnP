@@ -402,6 +402,7 @@ CirMgr::readCircuit(const string& fileName)
    buildDFSwrapper();
    /******* Analyzing floating gates ********/
    // Part I: A gate that cannot be reached from any PO (defined but not used, or no fanouts)
+   buildDefinedButNotUsed();
    // Part II: A gate with a floating fanin
    buildFloatingFanin();
    /********* Build not in DFS list *********/

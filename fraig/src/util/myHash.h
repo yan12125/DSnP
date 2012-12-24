@@ -289,6 +289,28 @@ public:
    // Need to be sure that k is not in the hash
    void forceInsert(const HashKey& k, const HashData& d) { }
 
+   // when content changed, need to move to a new place
+   void reCalculateHash(const HashKey& oldKey, const HashKey& newKey) 
+   {
+      vector<HashNode> *oldBucket = _buckets + oldKey() % _numBuckets, 
+                       *newBucket = _buckets + newKey() % _numBuckets;
+      HashData oldData;
+      for(typename vector<HashNode>::iterator it = oldBucket->begin();it != oldBucket->end();)
+      {
+         if(it->first == oldKey)
+         {
+            oldData = it->second;
+            it = oldBucket->erase(it);
+            break;
+         }
+         else
+         {
+            it++;
+         }
+      }
+      newBucket->push_back(make_pair(newKey, oldData));
+   }
+
 private:
    /*
     * Helper functions

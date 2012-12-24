@@ -20,24 +20,40 @@ using namespace std;
 class FaninKey
 {
 public:
-   FaninKey(CirGate* g): fanin(&(g->fanin))
+   FaninKey(CirGate* g)
    {
       assert(g->gateType == AIG_GATE);
+      this->fanin[0] = g->fanin[0];
+      this->fanin[1] = g->fanin[1];
+   }
+   FaninKey()
+   {
+      fanin[0] = fanin[1] = 0;
    }
    ~FaninKey()
    {
    }
+   FaninKey& operator=(const FaninKey& k)
+   {
+      this->fanin[0] = k.fanin[0];
+      this->fanin[1] = k.fanin[1];
+      return *this;
+   }
    size_t operator() () const
    {
-      return (*fanin)[0]+(*fanin)[1]+((*fanin)[0]%256)*((*fanin)[1]%256);
+      size_t retVal = fanin[0]+fanin[1]+(fanin[0]%256)*(fanin[1]%256);
+      #if FRAIG_DEBUG
+      cout << "Hash key for " << fanin[0] << " and " << fanin[1] << " = " << retVal << endl;
+      #endif
+      return retVal;
    }
    bool operator==(const FaninKey& f) const
    {
-      return ((*fanin)[0] == (*f.fanin)[0] && (*fanin)[1] == (*f.fanin)[1])||
-             ((*fanin)[1] == (*f.fanin)[0] && (*fanin)[0] == (*f.fanin)[1]);
+      return (fanin[0] == f.fanin[0] && fanin[1] == f.fanin[1]) || 
+             (fanin[1] == f.fanin[0] && fanin[0] == f.fanin[1]);
    }
 private:
-   vector<unsigned int>* fanin;
+   unsigned int fanin[2];
 };
 
 /*******************************/
@@ -65,6 +81,9 @@ CirMgr::strash()
    {
       unsigned int match = 0;
       FaninKey targetKey(gates[*it]); // will used later if merged
+      #if FRAIG_DEBUG
+      cout << "Checking " << *it << "...\n";
+      #endif
       if(gatesHash->check(targetKey, match))
       {
          if(match != *it) // *it are to be removed, by Ref
@@ -80,9 +99,18 @@ CirMgr::strash()
             for(vector<unsigned int>::iterator it2 = target->fanout.begin();it2 != target->fanout.end();it2++)
             {
                gates[match]->fanout.push_back(*it2);
+               FaninKey oldKey;
+               if(gates[*it2]->gateType == AIG_GATE) // recalculation needed only for AIG_GATE
+               {
+                  oldKey = gates[*it2]; // for reaclculation later
+               }
                gates[*it2]->replaceFanin(*it, 2*match+0); // fanin is 2*id+inv
+               if(gates[*it2]->gateType == AIG_GATE)
+               {
+                  gatesHash->reCalculateHash(oldKey, FaninKey(gates[*it2]));
+               }
                #if FRAIG_DEBUG
-               gates[*it2]->reportFanin(2);
+               gates[*it2]->reportFanin(1);
                #endif
             }
             delete gates[*it];
