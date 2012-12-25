@@ -13,12 +13,30 @@
 #include "cirMgr.h"
 #include "cirGate.h"
 #include "util.h"
+#include "myHash.h"
 
 using namespace std;
 
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
+
+class PatternKey
+{
+public:
+   PatternKey()
+   {
+   }
+   bool operator==(const PatternKey& k) const
+   {
+      return false;
+   }
+   size_t operator() () const
+   {
+      return 0;
+   }
+private:
+};
 
 /**************************************/
 /*   Static varaibles and functions   */
@@ -86,4 +104,5 @@ CirMgr::fileSim(ifstream& patternFile)
 
 void CirMgr::realSim(unsigned char* simValues[32])
 {
+   Cache<PatternKey, unsigned int> simCache;
 }

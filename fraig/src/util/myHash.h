@@ -405,8 +405,8 @@ class Cache
 typedef pair<CacheKey, CacheData> CacheNode;
 
 public:
-   Cache() : _size(0), _cache(0) {}
-   Cache(size_t s) : _size(0), _cache(0) { init(s); }
+   Cache() : _size(9973), _cache(0) { init(9973); }
+   Cache(size_t s) : _size(s), _cache(0) { init(s); }
    ~Cache() { reset(); }
 
    // NO NEED to implement Cache::iterator class
@@ -414,8 +414,14 @@ public:
    // TODO: implement these functions
    //
    // Initialize _cache with size s
-   void init(size_t s) { }
-   void reset() { }
+   void init(size_t s)
+   {
+      _cache = new CacheNode[s];
+   }
+   void reset()
+   {
+      delete [] _cache;
+   }
 
    size_t size() const { return _size; }
 
@@ -423,9 +429,23 @@ public:
    const CacheNode& operator [](size_t i) const { return _cache[i]; }
 
    // return false if cache miss
-   bool read(const CacheKey& k, CacheData& d) const { return false; }
+   bool read(const CacheKey& k, CacheData& d) const
+   {
+      size_t idx = k() % _size;
+      if(_cache[idx] == CacheData()) // nothing savevd yet
+      {
+         _cache[idx] = d;
+      }
+      else
+      {
+         return false;
+      }
+   }
    // If k is already in the Cache, overwrite the CacheData
-   void write(const CacheKey& k, const CacheData& d) { }
+   void write(const CacheKey& k, const CacheData& d)
+   {
+      _cache[k() % _size] = make_pair(k, d);
+   }
 
 private:
    // Do not add any extra data member
