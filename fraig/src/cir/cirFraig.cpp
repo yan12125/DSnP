@@ -72,11 +72,7 @@ void
 CirMgr::strash()
 {
    Hash<FaninKey, unsigned int>* gatesHash = new Hash<FaninKey, unsigned int>;
-   // build hash of gates
-   for(vector<unsigned int>::iterator it = AIGinDFSOrder.begin();it != AIGinDFSOrder.end();it++)
-   {
-      gatesHash->insert(FaninKey(gates[*it]), *it);
-   }
+   // check equivalent and build hash simultaneously
    for(vector<unsigned int>::iterator it = AIGinDFSOrder.begin();it != AIGinDFSOrder.end();it++)
    {
       unsigned int match = 0;
@@ -86,39 +82,40 @@ CirMgr::strash()
       #endif
       if(gatesHash->check(targetKey, match))
       {
-         if(match != *it) // *it are to be removed, by Ref
-         {                // != : matching someone else, not matching myself
-            cout << "Strashing: " << match << " merging " << *it << "...\n";
-            CirGate* target = gates[*it];
-            // gate must be AIG_GATE here
-            gates[target->fanin[0]/2]->replaceFanout(*it, &emptyVector);
-            if(target->fanin[1]/2 != target->fanin[0]/2)
+         cout << "Strashing: " << match << " merging " << *it << "...\n"; // *it is the "merged"
+         CirGate* target = gates[*it];
+         // gate must be AIG_GATE here
+         gates[target->fanin[0]/2]->replaceFanout(*it, &emptyVector);
+         if(target->fanin[1]/2 != target->fanin[0]/2)
+         {
+            gates[target->fanin[1]/2]->replaceFanout(*it, &emptyVector);
+         }
+         for(vector<unsigned int>::iterator it2 = target->fanout.begin();it2 != target->fanout.end();it2++)
+         {
+            gates[match]->fanout.push_back(*it2);
+            FaninKey oldKey;
+            if(gates[*it2]->gateType == AIG_GATE) // recalculation needed only for AIG_GATE
             {
-               gates[target->fanin[1]/2]->replaceFanout(*it, &emptyVector);
+               oldKey = gates[*it2]; // for reaclculation later
             }
-            for(vector<unsigned int>::iterator it2 = target->fanout.begin();it2 != target->fanout.end();it2++)
+            gates[*it2]->replaceFanin(*it, 2*match+0); // fanin is 2*id+inv
+            if(gates[*it2]->gateType == AIG_GATE)
             {
-               gates[match]->fanout.push_back(*it2);
-               FaninKey oldKey;
-               if(gates[*it2]->gateType == AIG_GATE) // recalculation needed only for AIG_GATE
-               {
-                  oldKey = gates[*it2]; // for reaclculation later
-               }
-               gates[*it2]->replaceFanin(*it, 2*match+0); // fanin is 2*id+inv
-               if(gates[*it2]->gateType == AIG_GATE)
-               {
-                  gatesHash->reCalculateHash(oldKey, FaninKey(gates[*it2]));
-               }
-               #if FRAIG_DEBUG
-               gates[*it2]->reportFanin(1);
-               #endif
+               //gatesHash->reCalculateHash(oldKey, FaninKey(gates[*it2]));
             }
-            delete gates[*it];
-            gates[*it] = NULL;
-            #if HASH_DEBUG
-            gatesHash->printAll();
+            #if FRAIG_DEBUG
+            gates[*it2]->reportFanin(1);
             #endif
          }
+         delete gates[*it];
+         gates[*it] = NULL;
+         #if HASH_DEBUG
+         gatesHash->printAll();
+         #endif
+      }
+      else
+      {
+         gatesHash->forceInsert(targetKey, *it);
       }
    }
    delete gatesHash;

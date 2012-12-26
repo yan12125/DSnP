@@ -284,10 +284,26 @@ public:
 
    // return true if inserted successfully (i.e. k is not in the hash)
    // return false is k is already in the hash ==> still do the insertion
-   bool replaceInsert(const HashKey& k, const HashData& d) { return true; }
+   bool replaceInsert(const HashKey& k, const HashData& d)
+   {
+      vector<HashNode>* curBucket = _buckets + k() % _numBuckets;
+      for(typename vector<HashNode>::iterator it = curBucket->begin();it != curBucket->end();it++)
+      {
+         if(it->first == k)
+         {
+            it->second = d;
+            return false;
+         }
+      }
+      curBucket->push_back(make_pair(k, d));
+      return true;
+   }
 
    // Need to be sure that k is not in the hash
-   void forceInsert(const HashKey& k, const HashData& d) { }
+   void forceInsert(const HashKey& k, const HashData& d)
+   {
+      _buckets[k() % _numBuckets].push_back(make_pair(k, d));
+   }
 
    // when content changed, need to move to a new place
    void reCalculateHash(const HashKey& oldKey, const HashKey& newKey) 
