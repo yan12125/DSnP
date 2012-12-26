@@ -259,6 +259,24 @@ void CirGate::removeFanin(unsigned int target)
    assert(false); // specified gate must be in fanin
 }
 
+void CirGate::removeFanout(unsigned int orig)
+{
+   bool hasDelete = false;
+   for(vector<unsigned int>::iterator it = fanout.begin();it != fanout.end();)
+   {
+      if(*it == orig)
+      {
+         it = fanout.erase(it);
+         hasDelete = true;
+      }
+      else
+      {
+         it++;
+      }
+   }
+   assert(hasDelete);
+}
+
 string CirGate::getTypeStr() const
 {
    switch(this->gateType)

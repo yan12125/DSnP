@@ -20,7 +20,6 @@ using namespace std;
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-vector<unsigned int> emptyVector; // for some dummy operations
 
 /**************************************/
 /*   Static varaibles and functions   */
@@ -167,7 +166,7 @@ CirMgr::optimize()
             gates[*it2]->replaceFanin(*it, 0);
             gates[0]->fanout.push_back(*it2);
          }
-         gates[target/2]->replaceFanout(*it, &emptyVector);
+         gates[target/2]->removeFanout(*it);
          if(target/2 != 0)
          {
             vector<unsigned int>::iterator itConstFanout = find(gates[0]->fanout.begin(), gates[0]->fanout.end(), *it);
@@ -201,7 +200,7 @@ CirMgr::optimize()
             gates[*it2]->replaceFanin(*it, 0);
             gates[0]->fanout.push_back(*it2);
          }
-         gates[target/2]->replaceFanout(*it, &emptyVector);
+         gates[target/2]->removeFanout(*it);
          // Fanouts of CONST wouldn't include *it, so not processing
          delete gates[*it];
          gates[*it] = NULL;

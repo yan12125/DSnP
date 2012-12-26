@@ -59,7 +59,6 @@ private:
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-extern vector<unsigned int> emptyVector;
 
 /**************************************/
 /*   Static varaibles and functions   */
@@ -85,24 +84,16 @@ CirMgr::strash()
          cout << "Strashing: " << match << " merging " << *it << "...\n"; // *it is the "merged"
          CirGate* target = gates[*it];
          // gate must be AIG_GATE here
-         gates[target->fanin[0]/2]->replaceFanout(*it, &emptyVector);
+         gates[target->fanin[0]/2]->removeFanout(*it);
          if(target->fanin[1]/2 != target->fanin[0]/2)
          {
-            gates[target->fanin[1]/2]->replaceFanout(*it, &emptyVector);
+            gates[target->fanin[1]/2]->removeFanout(*it);
          }
          for(vector<unsigned int>::iterator it2 = target->fanout.begin();it2 != target->fanout.end();it2++)
          {
             gates[match]->fanout.push_back(*it2);
-            FaninKey oldKey;
-            if(gates[*it2]->gateType == AIG_GATE) // recalculation needed only for AIG_GATE
-            {
-               oldKey = gates[*it2]; // for reaclculation later
-            }
             gates[*it2]->replaceFanin(*it, 2*match+0); // fanin is 2*id+inv
-            if(gates[*it2]->gateType == AIG_GATE)
-            {
-               //gatesHash->reCalculateHash(oldKey, FaninKey(gates[*it2]));
-            }
+            // reaclculation is not needed because fanouts are not in hash yet
             #if FRAIG_DEBUG
             gates[*it2]->reportFanin(1);
             #endif

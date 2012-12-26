@@ -306,7 +306,7 @@ public:
    }
 
    // when content changed, need to move to a new place
-   void reCalculateHash(const HashKey& oldKey, const HashKey& newKey) 
+   /*void reCalculateHash(const HashKey& oldKey, const HashKey& newKey) 
    {
       vector<HashNode> *oldBucket = _buckets + oldKey() % _numBuckets, 
                        *newBucket = _buckets + newKey() % _numBuckets;
@@ -325,7 +325,7 @@ public:
          }
       }
       newBucket->push_back(make_pair(newKey, oldData));
-   }
+   }*/
 
 private:
    /*
