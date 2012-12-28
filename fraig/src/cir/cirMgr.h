@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <map>
 
 using namespace std;
 
@@ -47,7 +48,6 @@ public:
    void randomSim();
    void fileSim(ifstream&);
    void setSimLog(ofstream *logFile) { _simLog = logFile; }
-   void realSim(unsigned char* simValues[32]);
 
    // Member functions about fraig
    void strash();
@@ -86,6 +86,7 @@ private:
    vector<unsigned int> notInDFS;      // defined but not used
    set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
+   map<unsigned int, unsigned int> PImap;  // which PI is id N?
    
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
@@ -93,6 +94,10 @@ private:
    void buildFloatingFanin();
    void buildDefinedButNotUsed();
    void buildNotInDFS2();
+
+   // simulation functions
+   void realSim(unsigned int* simValues, unsigned int N = 32);
+   unsigned int gateSim(unsigned int* simValues, unsigned int gateID);
 };
 
 #endif // CIR_MGR_H

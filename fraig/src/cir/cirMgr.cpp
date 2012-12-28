@@ -407,6 +407,13 @@ CirMgr::readCircuit(const string& fileName)
    buildFloatingFanin();
    /********* Build not in DFS list *********/
    buildNotInDFS2();
+   // build PI map
+   unsigned int count = 0;
+   for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
+   {
+      PImap.insert(make_pair(*it, count));
+      count++;
+   }
    return true;
 }
 
