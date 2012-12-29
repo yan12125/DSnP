@@ -448,13 +448,14 @@ public:
    bool read(const CacheKey& k, CacheData& d) const
    {
       size_t idx = k() % _size;
-      if(_cache[idx] == CacheData()) // nothing savevd yet
+      if(!(_cache[idx].first == k())) // cache miss
       {
-         _cache[idx] = d;
+         return false;
       }
       else
       {
-         return false;
+         d = _cache[idx].second;
+         return true;
       }
    }
    // If k is already in the Cache, overwrite the CacheData

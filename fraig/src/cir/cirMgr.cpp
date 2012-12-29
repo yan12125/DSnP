@@ -25,6 +25,7 @@ using namespace std;
 #define PARSE_DEBUG 0
 #define ERROR_DEBUG 1
 #define DFS_DEBUG 0
+#define PERFORMANCE 0
 
 // TODO: Implement memeber functions for class CirMgr
 
@@ -176,6 +177,9 @@ CirMgr::~CirMgr()
 bool
 CirMgr::readCircuit(const string& fileName)
 {
+   #if PERFORMANCE
+   cout << "Before reading circuit, clock = " << clock() << endl;
+   #endif
    bool errorOnParse = false;
    fCir = new fstream(fileName.c_str(), ios::in);
    if(!fCir->good())
@@ -307,6 +311,9 @@ CirMgr::readCircuit(const string& fileName)
       }
       return false;
    }
+   #if PERFORMANCE
+   cout << "Before building undefs, clock = " << clock() << endl;
+   #endif
    /*********** Build undefGates ***********/
    for(unsigned int i=0;i<=M+O;i++)
    {
@@ -337,6 +344,9 @@ CirMgr::readCircuit(const string& fileName)
          }
       }
    }
+   #if PERFORMANCE
+   cout << "Before parse fanout of AIGs, clock = " << clock() << endl;
+   #endif
    /******** Parse Fanouts for AIGs ********/
    for(unsigned int i=0;i<=M;i++) // M is the maximum id of gates
    {
@@ -359,6 +369,9 @@ CirMgr::readCircuit(const string& fileName)
          }
       }
    }
+   #if PERFORMANCE
+   cout << "Before parse fanouts for POs circuit, clock = " << clock() << endl;
+   #endif
    /********* Parse Fanouts for POs *********/
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
@@ -371,6 +384,9 @@ CirMgr::readCircuit(const string& fileName)
          gates[tmp->id]->fanout.push_back(tmp->n);
       }
    }
+   #if PERFORMANCE
+   cout << "Before parsing fanins for AIGs, clock = " << clock() << endl;
+   #endif
    /****** Parse Fanins for And gates *******/
    // Put inverting information in fanins vector is required, 
    // because fanins can be same but with different inverting
@@ -398,22 +414,40 @@ CirMgr::readCircuit(const string& fileName)
          }
       }
    }
+   #if PERFORMANCE
+   cout << "Before building DFS order, clock = " << clock() << endl;
+   #endif
    /*********** Build DFS Order *************/
    buildDFSwrapper();
    /******* Analyzing floating gates ********/
    // Part I: A gate that cannot be reached from any PO (defined but not used, or no fanouts)
+   #if PERFORMANCE
+   cout << "Before finding defined but not used, clock = " << clock() << endl;
+   #endif
    buildDefinedButNotUsed();
    // Part II: A gate with a floating fanin
+   #if PERFORMANCE
+   cout << "Before finding floating fanin, clock = " << clock() << endl;
+   #endif
    buildFloatingFanin();
+   #if PERFORMANCE
+   cout << "Before building not in DFS list, clock = " << clock() << endl;
+   #endif
    /********* Build not in DFS list *********/
    buildNotInDFS2();
    // build PI map
+   #if PERFORMANCE
+   cout << "Before building PI map, clock = " << clock() << endl;
+   #endif
    unsigned int count = 0;
    for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
    {
       PImap.insert(make_pair(*it, count));
       count++;
    }
+   #if PERFORMANCE
+   cout << "Last line of readCircuit(), clock = " << clock() << endl;
+   #endif
    return true;
 }
 

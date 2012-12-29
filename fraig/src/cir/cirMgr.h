@@ -19,12 +19,14 @@
 using namespace std;
 
 #include "cirDef.h"
+#include "myHash.h"
 
 extern CirMgr *cirMgr;
 
 class CirIOGate;
 class CirAndGate;
 class CirConstGate;
+class GateIDKey;
 
 // TODO: Define your own data members and member functions
 class CirMgr
@@ -87,6 +89,8 @@ private:
    set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
    map<unsigned int, unsigned int> PImap;  // which PI is id N?
+   Cache<GateIDKey, unsigned int>* simCache;
+   unsigned int* simValues;
    
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
@@ -96,8 +100,8 @@ private:
    void buildNotInDFS2();
 
    // simulation functions
-   void realSim(unsigned int* simValues, unsigned int N = 32);
-   unsigned int gateSim(unsigned int* simValues, unsigned int gateID);
+   void realSim(unsigned int N = 32);
+   unsigned int gateSim(unsigned int gateID);
 };
 
 #endif // CIR_MGR_H

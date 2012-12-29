@@ -23,21 +23,22 @@ using namespace std;
 /*   Global variable and enum  */
 /*******************************/
 
-class PatternKey
+class GateIDKey
 {
 public:
-   PatternKey()
+   GateIDKey(unsigned int _gateID = 0): gateID(_gateID)
    {
    }
-   bool operator==(const PatternKey& k) const
+   bool operator==(const GateIDKey& k) const
    {
-      return false;
+      return (this->gateID == k.gateID);
    }
    size_t operator() () const
    {
-      return 0;
+      return gateID;
    }
 private:
+   unsigned int gateID;
 };
 
 /**************************************/
@@ -56,7 +57,7 @@ void
 CirMgr::fileSim(ifstream& patternFile)
 {
    unsigned int nSim = 0;
-   unsigned int* simValues = new unsigned int[this->I]();
+   this->simValues = new unsigned int[this->I]();
    for(unsigned int i = 0;i<this->I;i++)
    {
       simValues[i] = 0;
@@ -69,8 +70,8 @@ CirMgr::fileSim(ifstream& patternFile)
       {
          if(!curLine.empty())
          {
-            cerr << "Error: Pattern(" << curLine <<  ") length(" << curLine.length() 
-                 << ")does not match the number of inputs(" << this->I << ") in a circuit!!" << endl;
+            cerr << "\nError: Pattern(" << curLine <<  ") length(" << curLine.length() 
+                 << ") does not match the number of inputs(" << this->I << ") in a circuit!!" << endl;
          }
          break;
       }
@@ -90,7 +91,7 @@ CirMgr::fileSim(ifstream& patternFile)
       // start simulation
       if(nSim%32 == 0)
       {
-         realSim(simValues);
+         realSim();
          // clear simValues
          for(unsigned int i = 0;i < this->I;i++)
          {
@@ -104,9 +105,10 @@ CirMgr::fileSim(ifstream& patternFile)
    }
    if(nSim%32 != 0)
    {
-      realSim(simValues, nSim%32);
+      realSim(nSim%32);
    }
    delete [] simValues;
+   simValues = NULL;
    cout << nSim << " patterns simulated." << endl;
 }
 
@@ -114,14 +116,15 @@ CirMgr::fileSim(ifstream& patternFile)
 /*   Private member functions about Simulation   */
 /*************************************************/
 
-void CirMgr::realSim(unsigned int* simValues, unsigned int N)
+void CirMgr::realSim(unsigned int N)
 {
-   Cache<PatternKey, unsigned int> simCache;
+   simCache = new Cache<GateIDKey, unsigned int>;
    unsigned int* results = new unsigned int[this->O];
    unsigned int count = 0;
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
-      results[count] = this->gateSim(simValues, *it);
+      unsigned int tmpResult = this->gateSim(gates[*it]->fanin[0]/2);
+      results[count] = gates[*it]->fanin[0]%2?~tmpResult:tmpResult;
       #if SIM_DEBUG
       cout << "[" << count << "] " << results[count] << endl;
       #endif
@@ -145,22 +148,33 @@ void CirMgr::realSim(unsigned int* simValues, unsigned int N)
       _simLog->flush();
    }
    delete [] results;
+   delete simCache;
+   simCache = NULL;
 }
 
-unsigned int CirMgr::gateSim(unsigned int* simValues, unsigned int gateID)
+unsigned int CirMgr::gateSim(unsigned int gateID)
 {
-   CirGate* g = gates[gateID];
+   assert(simCache);
    unsigned int retval = -1;
-   if(g->gateType == PO_GATE)
+   GateIDKey k(gateID);
+   if(simCache->read(k, retval))
    {
-      unsigned int tmpResult = gateSim(simValues, g->fanin[0]/2);
+      #if SIM_DEBUG
+      cout << "Read from sim cache: " << gateID << " = " << retval << endl;
+      #endif
+      return retval;
+   }
+   CirGate* g = gates[gateID];
+   /*if(g->gateType == PO_GATE)
+   {
+      unsigned int tmpResult = gateSim(g->fanin[0]/2);
       retval = g->fanin[0]%2?(~tmpResult):tmpResult;
    }
-   else if(g->gateType == AIG_GATE)
+   else */if(g->gateType == AIG_GATE)
    {
       unsigned int tmpResult[2];
-      tmpResult[0] = gateSim(simValues, g->fanin[0]/2);
-      tmpResult[1] = gateSim(simValues, g->fanin[1]/2);
+      tmpResult[0] = gateSim(g->fanin[0]/2);
+      tmpResult[1] = gateSim(g->fanin[1]/2);
       switch((g->fanin[0]%2)*2+(g->fanin[1]%2))
       {
          case 0:
@@ -195,5 +209,6 @@ unsigned int CirMgr::gateSim(unsigned int* simValues, unsigned int gateID)
    #if SIM_DEBUG
    cout << "Sim for gate " << gateID << " = " << retval << endl;
    #endif
+   simCache->write(k, retval);
    return retval;
 }
