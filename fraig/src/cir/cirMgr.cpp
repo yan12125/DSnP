@@ -172,6 +172,7 @@ CirMgr::~CirMgr()
       delete gates[i];
    }
    delete [] gates;
+   delete [] PImap;
 }
 
 bool
@@ -440,9 +441,17 @@ CirMgr::readCircuit(const string& fileName)
    cout << "Before building PI map, clock = " << clock() << endl;
    #endif
    unsigned int count = 0;
+   PImap = new unsigned int[M](); // all input id must <= M
+   for(unsigned int i = 0;i < I ;i++)
+   {
+      PImap[i] = 0;
+   }
    for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
    {
-      PImap.insert(make_pair(*it, count));
+      #if PARSE_DEBUG
+      cout << *it/2 << endl;
+      #endif
+      PImap[*it/2] = count;
       count++;
    }
    #if PERFORMANCE

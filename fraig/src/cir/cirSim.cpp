@@ -41,6 +41,8 @@ private:
    unsigned int gateID;
 };
 
+extern size_t getHashSize(size_t s); // in util/util.cpp
+
 /**************************************/
 /*   Static varaibles and functions   */
 /**************************************/
@@ -140,12 +142,25 @@ CirMgr::fileSim(ifstream& patternFile)
 
 void CirMgr::realSim(unsigned int N)
 {
-   simCache = new Cache<GateIDKey, unsigned long long>;
+   simCache = new Cache<GateIDKey, unsigned long long>(getHashSize(this->M));
    unsigned long long* results = new unsigned long long[this->O];
    unsigned int count = 0;
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
-      unsigned long long tmpResult = this->gateSim(gates[*it]->fanin[0]/2);
+      unsigned long long tmpResult = 0;
+      CirGate *g = gates[gates[*it]->fanin[0]/2];
+      if(g->gateType == AIG_GATE)
+      {
+         tmpResult = this->gateSim(gates[*it]->fanin[0]/2);
+      }
+      else if(g->gateType == PI_GATE)
+      {
+         tmpResult = simValues[PImap[g->getID()]];
+      }
+      else if(g->gateType == CONST_GATE)
+      {
+         tmpResult = 0;
+      }
       results[count] = gates[*it]->fanin[0]%2?~tmpResult:tmpResult;
       #if SIM_DEBUG
       cout << "[" << count << "] " << results[count] << endl;
@@ -195,8 +210,31 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
    else */if(g->gateType == AIG_GATE)
    {
       unsigned long long tmpResult[2];
-      tmpResult[0] = gateSim(g->fanin[0]/2);
-      tmpResult[1] = gateSim(g->fanin[1]/2);
+      CirGate *g1 = gates[g->fanin[0]/2], *g2 = gates[g->fanin[1]/2];
+      if(g1->gateType == CONST_GATE)
+      {
+         tmpResult[0] = 0;
+      }
+      else if(g1->gateType == PI_GATE)
+      {
+         tmpResult[0] = simValues[PImap[g1->getID()]];
+      }
+      else
+      {
+         tmpResult[0] = gateSim(g->fanin[0]/2);
+      }
+      if(g2->gateType == CONST_GATE)
+      {
+         tmpResult[1] = 0;
+      }
+      else if(g2->gateType == PI_GATE)
+      {
+         tmpResult[1] = simValues[PImap[g2->getID()]];
+      }
+      else
+      {
+         tmpResult[1] = gateSim(g->fanin[1]/2);
+      }
       switch((g->fanin[0]%2)*2+(g->fanin[1]%2))
       {
          case 0:
@@ -213,7 +251,7 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
             break;
       }
    }
-   else if(g->gateType == PI_GATE)
+   /*else if(g->gateType == PI_GATE)
    {
       map<unsigned int, unsigned int>::iterator it = PImap.find(g->getID()*2);
       assert(it != PImap.end());
@@ -222,7 +260,7 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
    else if(g->gateType == CONST_GATE)
    {
       retval = 0;
-   }
+   }*/
    else
    {
       retval = -1;

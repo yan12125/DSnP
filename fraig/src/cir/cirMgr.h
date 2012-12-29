@@ -88,7 +88,7 @@ private:
    vector<unsigned int> notInDFS;      // defined but not used
    set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
-   map<unsigned int, unsigned int> PImap;  // which PI is id N?
+   unsigned int* PImap;  // which PI is id N?
    Cache<GateIDKey, unsigned long long>* simCache;
    unsigned long long* simValues;
    
