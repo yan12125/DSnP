@@ -57,7 +57,9 @@ void
 CirMgr::fileSim(ifstream& patternFile)
 {
    unsigned int nSim = 0;
-   this->simValues = new unsigned int[this->I]();
+   // unsigned long long are 64-bit long in any platform
+   // http://blog.csdn.net/zhangzhenghe/article/details/6766581
+   this->simValues = new unsigned long long[this->I]();
    for(unsigned int i = 0;i<this->I;i++)
    {
       simValues[i] = 0;
@@ -85,11 +87,25 @@ CirMgr::fileSim(ifstream& patternFile)
       }
       for(unsigned int i = 0;i < this->I;i++)
       {
-         simValues[i] += ((curLine[i] == '1') << (nSim%32)); // http://stackoverflow.com/questions/5369770/bool-to-int-conversion
+         #if SIM_DEBUG
+         if(i == 0)
+         {
+            cout << hex << simValues[i] << dec << endl;
+         }
+         #endif
+         unsigned int long long tmpBit = (curLine[i] == '1');
+         tmpBit <<= (nSim%64);
+         simValues[i] += tmpBit; // http://stackoverflow.com/questions/5369770/bool-to-int-conversion
+         #if SIM_DEBUG
+         if(i == 0)
+         {
+            cout << hex << simValues[i] << dec << "\n--------" << endl;
+         }
+         #endif
       }
       nSim++;
       // start simulation
-      if(nSim%32 == 0)
+      if(nSim%64 == 0)
       {
          realSim();
          // clear simValues
@@ -103,9 +119,15 @@ CirMgr::fileSim(ifstream& patternFile)
          break;
       }
    }
-   if(nSim%32 != 0)
+   if(nSim%64 != 0)
    {
-      realSim(nSim%32);
+      #if SIM_DEBUG
+      for(unsigned int i = 0;i < this->I;i++)
+      {
+         cout << hex << simValues[i] << dec << endl;
+      }
+      #endif
+      realSim(nSim%64);
    }
    delete [] simValues;
    simValues = NULL;
@@ -118,12 +140,12 @@ CirMgr::fileSim(ifstream& patternFile)
 
 void CirMgr::realSim(unsigned int N)
 {
-   simCache = new Cache<GateIDKey, unsigned int>;
-   unsigned int* results = new unsigned int[this->O];
+   simCache = new Cache<GateIDKey, unsigned long long>;
+   unsigned long long* results = new unsigned long long[this->O];
    unsigned int count = 0;
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
-      unsigned int tmpResult = this->gateSim(gates[*it]->fanin[0]/2);
+      unsigned long long tmpResult = this->gateSim(gates[*it]->fanin[0]/2);
       results[count] = gates[*it]->fanin[0]%2?~tmpResult:tmpResult;
       #if SIM_DEBUG
       cout << "[" << count << "] " << results[count] << endl;
@@ -136,12 +158,12 @@ void CirMgr::realSim(unsigned int N)
       {
          for(unsigned int j = 0;j < this->I;j++)
          {
-            *_simLog << ((simValues[j] & (1 << i))?'1':'0');
+            *_simLog << ((simValues[j] & (1LL << i))?'1':'0');
          }
          *_simLog << ' ';
          for(unsigned int j = 0;j < this->O;j++)
          {
-            *_simLog << ((results[j] & (1 << i))?'1':'0');
+            *_simLog << ((results[j] & (1LL << i))?'1':'0');
          }
          *_simLog << "\n";
       }
@@ -152,10 +174,10 @@ void CirMgr::realSim(unsigned int N)
    simCache = NULL;
 }
 
-unsigned int CirMgr::gateSim(unsigned int gateID)
+unsigned long long CirMgr::gateSim(unsigned int gateID)
 {
    assert(simCache);
-   unsigned int retval = -1;
+   unsigned long long retval = -1;
    GateIDKey k(gateID);
    if(simCache->read(k, retval))
    {
@@ -172,7 +194,7 @@ unsigned int CirMgr::gateSim(unsigned int gateID)
    }
    else */if(g->gateType == AIG_GATE)
    {
-      unsigned int tmpResult[2];
+      unsigned long long tmpResult[2];
       tmpResult[0] = gateSim(g->fanin[0]/2);
       tmpResult[1] = gateSim(g->fanin[1]/2);
       switch((g->fanin[0]%2)*2+(g->fanin[1]%2))

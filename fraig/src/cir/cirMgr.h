@@ -89,8 +89,8 @@ private:
    set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
    map<unsigned int, unsigned int> PImap;  // which PI is id N?
-   Cache<GateIDKey, unsigned int>* simCache;
-   unsigned int* simValues;
+   Cache<GateIDKey, unsigned long long>* simCache;
+   unsigned long long* simValues;
    
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
@@ -100,8 +100,8 @@ private:
    void buildNotInDFS2();
 
    // simulation functions
-   void realSim(unsigned int N = 32);
-   unsigned int gateSim(unsigned int gateID);
+   void realSim(unsigned int N = 64);
+   unsigned long long gateSim(unsigned int gateID);
 };
 
 #endif // CIR_MGR_H
