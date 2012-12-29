@@ -448,7 +448,7 @@ public:
    bool read(const CacheKey& k, CacheData& d) const
    {
       size_t idx = k() % _size;
-      if(!(_cache[idx].first == k())) // cache miss
+      if(!(_cache[idx].first == k)) // cache miss
       {
          return false;
       }

@@ -402,8 +402,8 @@ CirMgr::readCircuit(const string& fileName)
             cout << i << " fanin " << tmp->pin[1] << (tmp->inv[1]?" inverted":"") << "\n"
                  << i << " fanin " << tmp->pin[2] << (tmp->inv[2]?" inverted":"") << endl;
             #endif
-            tmp->fanin.push_back(tmp->pin[1]*2+tmp->inv[1]);
-            tmp->fanin.push_back(tmp->pin[2]*2+tmp->inv[2]);
+            tmp->fanin[0] = tmp->pin[1]*2+tmp->inv[1];
+            tmp->fanin[1] = tmp->pin[2]*2+tmp->inv[2];
          }
          if(gates[i]->gateType == PO_GATE)
          {
@@ -411,7 +411,7 @@ CirMgr::readCircuit(const string& fileName)
             #if PARSE_DEBUG
             cout << i << " fanin " << tmp->id << endl;
             #endif
-            tmp->fanin.push_back(tmp->id*2+tmp->inverted);
+            tmp->fanin[0] = tmp->id*2+tmp->inverted;
          }
       }
    }
@@ -441,7 +441,7 @@ CirMgr::readCircuit(const string& fileName)
    cout << "Before building PI map, clock = " << clock() << endl;
    #endif
    unsigned int count = 0;
-   PImap = new unsigned int[M](); // all input id must <= M
+   PImap = new unsigned int[M+1](); // all input id must <= M
    for(unsigned int i = 0;i < I ;i++)
    {
       PImap[i] = 0;
@@ -646,12 +646,33 @@ unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID, vector<unsign
    #if DFS_DEBUG
    cout << g->getID() << "\n";
    #endif
-   for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanin.end();it++)
+   /*for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanin.end();it++)
    {
       if(gates[(*it)/2]->dfsOrder == -1 &&        // not visited
          (includeUndefs?true:(gates[(*it)/2]->gateType != UNDEF_GATE)))  // undefined gates are not counted
       {
          curID = buildDFSOrder(gates[(*it)/2], curID, target, includeUndefs);
+      }
+   }*/
+   if(g->gateType == AIG_GATE)
+   {
+      if(gates[g->fanin[0]/2]->dfsOrder == -1 &&        // not visited
+         (includeUndefs?true:(gates[g->fanin[0]/2]->gateType != UNDEF_GATE)))  // undefined gates are not counted
+      {
+         curID = buildDFSOrder(gates[g->fanin[0]/2], curID, target, includeUndefs);
+      }
+      if(gates[g->fanin[1]/2]->dfsOrder == -1 && 
+         (includeUndefs?true:(gates[g->fanin[1]/2]->gateType != UNDEF_GATE)))
+      {
+         curID = buildDFSOrder(gates[g->fanin[1]/2], curID, target, includeUndefs);
+      }
+   }
+   else if(g->gateType == PO_GATE)
+   {
+      if(gates[g->fanin[0]/2]->dfsOrder == -1 &&        // not visited
+         (includeUndefs?true:(gates[g->fanin[0]/2]->gateType != UNDEF_GATE)))  // undefined gates are not counted
+      {
+         curID = buildDFSOrder(gates[g->fanin[0]/2], curID, target, includeUndefs);
       }
    }
    g->dfsOrder = curID;

@@ -157,7 +157,7 @@ void CirMgr::realSim(unsigned int N)
       {
          tmpResult = simValues[PImap[g->getID()]];
       }
-      else if(g->gateType == CONST_GATE)
+      else if(g->gateType == CONST_GATE || g->gateType == UNDEF_GATE)
       {
          tmpResult = 0;
       }
@@ -194,13 +194,13 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
    assert(simCache);
    unsigned long long retval = -1;
    GateIDKey k(gateID);
-   if(simCache->read(k, retval))
+   /*if(simCache->read(k, retval))
    {
       #if SIM_DEBUG
       cout << "Read from sim cache: " << gateID << " = " << retval << endl;
       #endif
       return retval;
-   }
+   }*/
    CirGate* g = gates[gateID];
    /*if(g->gateType == PO_GATE)
    {
@@ -211,7 +211,7 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
    {
       unsigned long long tmpResult[2];
       CirGate *g1 = gates[g->fanin[0]/2], *g2 = gates[g->fanin[1]/2];
-      if(g1->gateType == CONST_GATE)
+      if(g1->gateType == CONST_GATE || g1->gateType == UNDEF_GATE)
       {
          tmpResult[0] = 0;
       }
@@ -221,9 +221,12 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
       }
       else
       {
-         tmpResult[0] = gateSim(g->fanin[0]/2);
+         if(!simCache->read(GateIDKey(g->fanin[0]/2), tmpResult[0]))
+         {
+            tmpResult[0] = gateSim(g->fanin[0]/2);
+         }
       }
-      if(g2->gateType == CONST_GATE)
+      if(g2->gateType == CONST_GATE || g2->gateType == UNDEF_GATE)
       {
          tmpResult[1] = 0;
       }
@@ -233,7 +236,10 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
       }
       else
       {
-         tmpResult[1] = gateSim(g->fanin[1]/2);
+         if(!simCache->read(GateIDKey(g->fanin[1]/2), tmpResult[1]))
+         {
+            tmpResult[1] = gateSim(g->fanin[1]/2);
+         }
       }
       switch((g->fanin[0]%2)*2+(g->fanin[1]%2))
       {

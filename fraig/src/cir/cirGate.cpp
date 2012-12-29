@@ -93,11 +93,20 @@ CirGate::reportFaninInternal(int level, int indent, bool invert, list<const CirG
       return;
    }
    reported->push_back(this);
-   for(vector<unsigned int>::const_iterator it = fanin.begin();it != fanin.end();it++)
+   /*for(vector<unsigned int>::const_iterator it = fanin.begin();it != fanin.end();it++)
    {
       CirGate* g = cirMgr->getGate((*it)/2);
       // g must be a valid gate here
       g->reportFaninInternal(level-1, indent+2, (*it)%2, reported);
+   }*/
+   if(this->gateType == AIG_GATE)
+   {
+      cirMgr->getGate(fanin[0]/2)->reportFaninInternal(level-1, indent+2, fanin[0]%2, reported);
+      cirMgr->getGate(fanin[1]/2)->reportFaninInternal(level-1, indent+2, fanin[1]%2, reported);
+   }
+   else if(this->gateType == PO_GATE)
+   {
+      cirMgr->getGate(fanin[0]/2)->reportFaninInternal(level-1, indent+2, fanin[0]%2, reported);
    }
 }
 
@@ -242,7 +251,7 @@ void CirGate::replaceFanout(unsigned int orig, vector<unsigned int>* _fanout)
    #endif
 }
 
-void CirGate::removeFanin(unsigned int target)
+/*void CirGate::removeFanin(unsigned int target)
 {
    for(vector<unsigned int>::iterator it = fanin.begin();it != fanin.end();)
    {
@@ -257,7 +266,7 @@ void CirGate::removeFanin(unsigned int target)
       }
    }
    assert(false); // specified gate must be in fanin
-}
+}*/
 
 void CirGate::removeFanout(unsigned int orig)
 {
