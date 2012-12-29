@@ -59,9 +59,9 @@ void
 CirMgr::fileSim(ifstream& patternFile)
 {
    unsigned int nSim = 0;
-   // unsigned long long are 64-bit long in any platform
+   // unsigned int are 32-bit long in most platform
    // http://blog.csdn.net/zhangzhenghe/article/details/6766581
-   this->simValues = new unsigned long long[this->I]();
+   this->simValues = new unsigned int[this->I]();
    for(unsigned int i = 0;i<this->I;i++)
    {
       simValues[i] = 0;
@@ -90,24 +90,24 @@ CirMgr::fileSim(ifstream& patternFile)
       for(unsigned int i = 0;i < this->I;i++)
       {
          #if SIM_DEBUG
-         if(i == 0)
+         /*if(i == 0)
          {
             cout << hex << simValues[i] << dec << endl;
-         }
+         }*/
          #endif
          unsigned int long long tmpBit = (curLine[i] == '1');
-         tmpBit <<= (nSim%64);
+         tmpBit <<= (nSim%32);
          simValues[i] += tmpBit; // http://stackoverflow.com/questions/5369770/bool-to-int-conversion
          #if SIM_DEBUG
-         if(i == 0)
+         /*if(i == 0)
          {
             cout << hex << simValues[i] << dec << "\n--------" << endl;
-         }
+         }*/
          #endif
       }
       nSim++;
       // start simulation
-      if(nSim%64 == 0)
+      if(nSim%32 == 0)
       {
          realSim();
          // clear simValues
@@ -121,7 +121,7 @@ CirMgr::fileSim(ifstream& patternFile)
          break;
       }
    }
-   if(nSim%64 != 0)
+   if(nSim%32 != 0)
    {
       #if SIM_DEBUG
       for(unsigned int i = 0;i < this->I;i++)
@@ -129,7 +129,7 @@ CirMgr::fileSim(ifstream& patternFile)
          cout << hex << simValues[i] << dec << endl;
       }
       #endif
-      realSim(nSim%64);
+      realSim(nSim%32);
    }
    delete [] simValues;
    simValues = NULL;
@@ -142,20 +142,37 @@ CirMgr::fileSim(ifstream& patternFile)
 
 void CirMgr::realSim(unsigned int N)
 {
-   simCache = new Cache<GateIDKey, unsigned long long>(getHashSize(this->M));
-   unsigned long long* results = new unsigned long long[this->O];
+   simCache = new Cache<GateIDKey, unsigned int>(getHashSize(this->M));
+   fecGroups.push_back(new set<unsigned int>);
+   for(unsigned int i = 0;i <= M;i++)
+   {
+      if(gates[i])
+      {
+         (*fecGroups.begin())->insert(i);
+      }
+   }
+   unsigned int* results = new unsigned int[this->O];
    unsigned int count = 0;
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
-      unsigned long long tmpResult = 0;
+      unsigned int tmpResult = 0;
       CirGate *g = gates[gates[*it]->fanin[0]/2];
       if(g->gateType == AIG_GATE)
       {
-         tmpResult = this->gateSim(gates[*it]->fanin[0]/2);
+         tmpResult = this->gateSim(gates[*it]->fanin[0]/2, N);
+         #if SIM_DEBUG
+         cout << "Last sim value for gate " << *it << " = " << hex << tmpResult << dec << endl;
+         #endif
+         gates[*it]->lastSimValue = tmpResult;
       }
       else if(g->gateType == PI_GATE)
       {
          tmpResult = simValues[PImap[g->getID()]];
+         #if SIM_DEBUG
+         cout << "Last sim value for gate " << g->getID() << " = " << hex << tmpResult << dec << endl;
+         #endif
+         g->lastSimValue = tmpResult;
+         gates[*it]->lastSimValue = tmpResult;
       }
       else if(g->gateType == CONST_GATE || g->gateType == UNDEF_GATE)
       {
@@ -189,10 +206,10 @@ void CirMgr::realSim(unsigned int N)
    simCache = NULL;
 }
 
-unsigned long long CirMgr::gateSim(unsigned int gateID)
+unsigned int CirMgr::gateSim(unsigned int gateID, unsigned int N)
 {
    assert(simCache);
-   unsigned long long retval = -1;
+   unsigned int retval = -1;
    GateIDKey k(gateID);
    /*if(simCache->read(k, retval))
    {
@@ -209,7 +226,7 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
    }
    else */if(g->gateType == AIG_GATE)
    {
-      unsigned long long tmpResult[2];
+      unsigned int tmpResult[2];
       CirGate *g1 = gates[g->fanin[0]/2], *g2 = gates[g->fanin[1]/2];
       if(g1->gateType == CONST_GATE || g1->gateType == UNDEF_GATE)
       {
@@ -218,12 +235,16 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
       else if(g1->gateType == PI_GATE)
       {
          tmpResult[0] = simValues[PImap[g1->getID()]];
+         #if SIM_DEBUG
+         cout << "Last sim value for gate " << g->getID() << " = " << hex << tmpResult[0] << dec << endl;
+         #endif
+         g1->lastSimValue = tmpResult[0];
       }
       else
       {
          if(!simCache->read(GateIDKey(g->fanin[0]/2), tmpResult[0]))
          {
-            tmpResult[0] = gateSim(g->fanin[0]/2);
+            tmpResult[0] = gateSim(g->fanin[0]/2, N);
          }
       }
       if(g2->gateType == CONST_GATE || g2->gateType == UNDEF_GATE)
@@ -233,12 +254,16 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
       else if(g2->gateType == PI_GATE)
       {
          tmpResult[1] = simValues[PImap[g2->getID()]];
+         #if SIM_DEBUG
+         cout << "Last sim value for gate " << g->getID() << " = " << hex << tmpResult[1] << dec << endl;
+         #endif
+         g2->lastSimValue = tmpResult[1];
       }
       else
       {
          if(!simCache->read(GateIDKey(g->fanin[1]/2), tmpResult[1]))
          {
-            tmpResult[1] = gateSim(g->fanin[1]/2);
+            tmpResult[1] = gateSim(g->fanin[1]/2, N);
          }
       }
       switch((g->fanin[0]%2)*2+(g->fanin[1]%2))
@@ -276,5 +301,10 @@ unsigned long long CirMgr::gateSim(unsigned int gateID)
    cout << "Sim for gate " << gateID << " = " << retval << endl;
    #endif
    simCache->write(k, retval);
+   // save to each gate
+   #if SIM_DEBUG
+   cout << "Last sim value for gate " << gateID << " = " << hex << retval << dec << endl;
+   #endif
+   gates[gateID]->lastSimValue = retval;
    return retval;
 }

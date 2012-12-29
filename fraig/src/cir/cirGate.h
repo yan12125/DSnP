@@ -28,7 +28,7 @@ class CirGate
 public:
    friend class CirMgr;
    friend class FaninKey;
-   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line), dfsOrder(-1){}
+   CirGate(enum GateType _gateType, unsigned int _line): gateType(_gateType), lineNo(_line), dfsOrder(-1), lastSimValue(0){}
    virtual ~CirGate() {}
 
    // Basic access methods
@@ -59,6 +59,7 @@ protected:
    enum GateType gateType;
    unsigned int lineNo;
    int dfsOrder;  // not visited is -1, NOT 0!!!
+   unsigned int lastSimValue;
 };
 
 class CirAndGate: public CirGate

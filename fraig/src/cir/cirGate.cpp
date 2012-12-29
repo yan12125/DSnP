@@ -48,7 +48,17 @@ CirGate::reportGate() const
    {
       cout << string(49-len, ' ') << "=\n";
    }
-   cout << "==================================================\n";
+   cout << "= FECs:                                          =\n"
+        << "= Value: ";
+   for(int i = 31;i >= 0;i--)
+   {
+      cout << ((lastSimValue & (1 << i))?'1':'0');
+      if(i%4 == 0 && i != 0)
+      {
+         cout << '_';
+      }
+   }
+   cout << " =\n==================================================\n";
 }
 
 void CirGate::reportFanin(int level) const
