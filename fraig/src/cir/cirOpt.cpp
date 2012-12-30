@@ -32,6 +32,10 @@ using namespace std;
 void
 CirMgr::sweep()
 {
+   if(notInDFS2.empty())
+   {
+      buildNotInDFS2();
+   }
    bool* removed = new bool[M+O+1];
    for(unsigned int i = 0;i < M+O+1;i++)
    {

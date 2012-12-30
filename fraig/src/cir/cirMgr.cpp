@@ -431,11 +431,11 @@ CirMgr::readCircuit(const string& fileName)
    cout << "Before finding floating fanin, clock = " << clock() << endl;
    #endif
    buildFloatingFanin();
-   #if PERFORMANCE
+   /*#if PERFORMANCE
    cout << "Before building not in DFS list, clock = " << clock() << endl;
-   #endif
+   #endif*/
    /********* Build not in DFS list *********/
-   buildNotInDFS2();
+   //buildNotInDFS2(); // not build here because it's rarely used
    // build PI map
    #if PERFORMANCE
    cout << "Before building PI map, clock = " << clock() << endl;
