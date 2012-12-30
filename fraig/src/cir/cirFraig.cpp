@@ -118,7 +118,7 @@ CirMgr::strash()
 void
 CirMgr::fraig()
 {
-   for(list<set<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
+   for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
    {
       delete *it;
    }

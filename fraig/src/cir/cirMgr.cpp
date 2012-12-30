@@ -779,5 +779,20 @@ void CirMgr::buildNotInDFS2()
 void
 CirMgr::printFECPairs() const
 {
+   unsigned int count = 0;
+   for(vector<vector<unsigned int>* >::const_iterator it = fecGroups.begin();it != fecGroups.end();it++)
+   {
+      cout << "[" << count << "] ";
+      for(vector<unsigned int>::iterator it2 = (*it)->begin();it2 != (*it)->end();)
+      {
+         cout << (*it2%2?"!":"") << *it2/2;
+         if(++it2 != (*it)->end())
+         {
+            cout << " ";
+         }
+      }
+      cout << endl;
+      count++;
+   }
 }
 

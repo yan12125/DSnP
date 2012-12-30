@@ -19,6 +19,7 @@
 
 #define PARSE_DEBUG 0
 #define OPT_DEBUG 0
+#define SIM_DEBUG 0
 
 using namespace std;
 
@@ -48,8 +49,36 @@ CirGate::reportGate() const
    {
       cout << string(49-len, ' ') << "=\n";
    }
-   cout << "= FECs:                                          =\n"
-        << "= Value: ";
+   cout << "= FECs: ";
+   stringstream ss;
+   if(curFECGroup)
+   {
+      #if SIM_DEBUG
+      cout << "Not inv in FEC group" << endl;
+      #endif
+      for(vector<unsigned int>::iterator it = curFECGroup->begin();it != curFECGroup->end();it++)
+      {
+         if(*it/2 != this->getID())
+         {
+            if(invInFECGroup)
+            {
+               ss << ((*it%2)?"":"!");
+            }
+            else
+            {
+               ss << ((*it%2)?"!":"");
+            }
+            ss << *it/2 << " ";
+         }
+      }
+   }
+   cout << ss.str();
+   ss.seekg(0, ios::end);
+   if(ss.tellg() < 41)
+   {
+      cout << string(41-ss.tellg(), ' ');
+   }
+   cout << "=\n" << "= Value: ";
    for(int i = 31;i >= 0;i--)
    {
       cout << ((lastSimValue & (1 << i))?'1':'0');

@@ -92,7 +92,7 @@ private:
    unsigned int* PImap;  // which PI is id N?
    Cache<GateIDKey, unsigned int>* simCache;
    unsigned int* simValues;
-   list<set<unsigned int>* > fecGroups;
+   vector<vector<unsigned int>* > fecGroups;
    
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
