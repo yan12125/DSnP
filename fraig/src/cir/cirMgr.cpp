@@ -697,6 +697,14 @@ void CirMgr::buildDFSwrapper()
    dfsOrderWithUndefs.clear();
    dfsOrder.clear();
    AIGinDFSOrder.clear();
+   // clean DFS flags
+   for(unsigned int i = 0;i <= M+O;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->dfsOrder = -1;
+      }
+   }
    // build a version with undefs, using in sweep
    unsigned int lastID = 0;
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
@@ -716,14 +724,6 @@ void CirMgr::buildDFSwrapper()
    for(vector<unsigned int>::iterator it = PO.begin();it != PO.end();it++)
    {
       lastID = buildDFSOrder(gates[*it], lastID, &dfsOrder, false);
-   }
-   // clean DFS flags
-   for(unsigned int i = 0;i <= M+O;i++)
-   {
-      if(gates[i])
-      {
-         gates[i]->dfsOrder = -1;
-      }
    }
 }
 

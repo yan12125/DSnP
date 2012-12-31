@@ -27,7 +27,7 @@ extern CirMgr *cirMgr;
 class CirIOGate;
 class CirAndGate;
 class CirConstGate;
-class GateIDKey;
+class uintKey; // in cirSim.cpp
 
 // TODO: Define your own data members and member functions
 class CirMgr
@@ -90,7 +90,7 @@ private:
    set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
    unsigned int* PImap;  // which PI is id N?
-   Cache<GateIDKey, unsigned int>* simCache;
+   Cache<uintKey, unsigned int>* simCache;
    unsigned int* simValues;
    vector<vector<unsigned int>* > fecGroups;
    
