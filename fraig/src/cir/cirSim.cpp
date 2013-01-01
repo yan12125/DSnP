@@ -19,6 +19,7 @@
 using namespace std;
 
 #define SIM_DEBUG 0
+#define FEC_DEBUG 0
 #define SIM_PERFORMANCE 0
 
 /*******************************/
@@ -136,7 +137,7 @@ CirMgr::fileSim(ifstream& patternFile)
    }
    delete [] simValues;
    simValues = NULL;
-   cout << nSim << " patterns simulated." << endl;
+   cout << "\n" << nSim << " patterns simulated." << endl;
 }
 
 /*************************************************/
@@ -279,34 +280,47 @@ void CirMgr::realSim(unsigned int N)
          it++;
       }
    }*/
-   Hash<uintKey, vector<unsigned int>*> curFecGroups;
-   unsigned int curNGroups = fecGroups.size();
+   if(fecGroups.size() == 1)
+   {
+      for(vector<unsigned int>::iterator it = fecGroups[0]->begin()+1;it != fecGroups[0]->end();it++)
+      {
+         if(gates[*it/2]->lastSimValue == 0xffffffff)
+         {
+            gates[*it/2]->invInFECGroup = true;
+            *it ^= 0x1;
+         }
+      }
+   }
    for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
    {
-      curFecGroups.insert(uintKey(gates[(*it)->front()/2]->lastSimValue), *it);
-   }
-   for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.begin() + curNGroups;it++)
-   {
-      Hash<uintKey, vector<unsigned int>*> newFecGroups;
+      //Hash<uintKey, vector<unsigned int>*> curFecGroups;
+      //unsigned int curNGroups = fecGroups.size();
+      /*for(vector<vector<unsigned int>*>::iterator it2 = fecGroups.begin();it2 != fecGroups.end();it2++)
+      {
+         curFecGroups.insert(uintKey(gates[(*it2)->front()/2]->lastSimValue), *it2);
+      }*/
+      Hash<uintKey, vector<unsigned int>*> newFecGroups(getHashSize((*it)->size()));
       for(vector<unsigned int>::iterator it2 = (*it)->begin()+1;it2 != (*it)->end();)
       {
-         vector<unsigned int> *grpOld = NULL, *grpNew = NULL, 
-                              *grpOldInv = NULL, *grpNewInv = NULL, 
-                              *grp = NULL;
-         bool foundOld = curFecGroups.check(uintKey(gates[*it2/2]->lastSimValue), grpOld), 
-              foundNew = newFecGroups.check(uintKey(gates[*it2/2]->lastSimValue), grpNew), 
-              foundOldInv = curFecGroups.check(uintKey(~gates[*it2/2]->lastSimValue), grpOldInv), 
-              foundNewInv = newFecGroups.check(uintKey(~gates[*it2/2]->lastSimValue), grpNewInv);
-         if(!foundOld && !foundNew && !foundOldInv && !foundNewInv)
+         if(((*it2%2 == 0) && gates[*it2/2]->lastSimValue == gates[(*it)->at(0)/2]->lastSimValue)
+          ||((*it2%2 == 1) && gates[*it2/2]->lastSimValue == ~gates[(*it)->at(0)/2]->lastSimValue))
          {
-            #if SIM_DEBUG
+            it2++;
+            continue;
+         }
+         vector<unsigned int> *grpNew = NULL, *grpNewInv = NULL, *grp = NULL;
+         bool foundNew = newFecGroups.check(uintKey(gates[*it2/2]->lastSimValue), grpNew), 
+              foundNewInv = newFecGroups.check(uintKey(~gates[*it2/2]->lastSimValue), grpNewInv);
+         if(!foundNew && !foundNewInv)
+         {
+            #if FEC_DEBUG
             cout << "Create a new group for " << *it2/2 << " at line " << __LINE__ << endl;
             #endif
             grp = new vector<unsigned int>;
             newFecGroups.forceInsert(uintKey(gates[*it2/2]->lastSimValue), grp);
-            grp->push_back(*it2);
+            grp->push_back(*it2 & 0xffffffe); // set inv bit to zero
             gates[*it2/2]->curFECGroup = grp;
-            gates[*it2/2]->invInFECGroup = *it2%2;
+            gates[*it2/2]->invInFECGroup = false;
             it2 = (*it)->erase(it2);
          }
          else if(foundNew)
@@ -318,42 +332,113 @@ void CirMgr::realSim(unsigned int N)
          }
          else if(foundNewInv)
          {
-            grpNewInv->push_back(*it2 ^ 1);
+            grpNewInv->push_back(*it2 | 1);
             gates[*it2/2]->curFECGroup = grpNewInv;
-            gates[*it2/2]->invInFECGroup = !(*it2%2);
+            gates[*it2/2]->invInFECGroup = true;//!(*it2%2);
             it2 = (*it)->erase(it2);
          }
-         else if(foundOldInv && grpOldInv == *it)
+         /*else if(foundOldInv && grpOldInv == *it)
          {
             *it2 |= 1; // reverse inv bit
-            gates[*it2/2]->invInFECGroup = !gates[*it2/2]->invInFECGroup;
+            gates[*it2/2]->invInFECGroup = true;
             it2++;
          }
-         // must found in old becuse current group is in curFecGroups
-         else if(grpOld != *it) // check if the same group
-         {  // still need to create a new group
-            #if SIM_DEBUG
-            if(foundOldInv && grpOldInv != *it)
-            {
-               cout << "Found old Inv, first in group = " << (*grpOldInv)[0] << endl;
-            }
-            cout << "Create a new group for " << *it2/2 << " at line " << __LINE__ << endl;
-            #endif
-            grp = new vector<unsigned int>; // grp is NULL now, which is not used anymore
-            newFecGroups.forceInsert(uintKey(gates[*it2/2]->lastSimValue), grp);
-            grp->push_back(*it2);
-            gates[*it2/2]->curFECGroup = grp;
-            gates[*it2/2]->invInFECGroup = *it2%2;
-            // remove from original group
-            it2 = (*it)->erase(it2);
-         }
-         else // found in the same old group
+         else if(foundOld && grpOld == *it)
          {
-            it2++; // in such scenario, nothing shout be done
+            it2++;
          }
-         #if SIM_DEBUG
+         else
+         {
+            if(gates[*it2/2]->invInFECGroup)
+            {
+               if(foundOldInv && grpOldInv != *it)
+               {
+                  if(gates[grpOldInv->at(0)/2]->lastSimValue != ~gates[(*it)->at(0)/2]->lastSimValue)
+                  {
+                     #if FEC_DEBUG
+                     cout << "Create a new group for " << *it2/2 << " at line " << __LINE__ << endl;
+                     #endif
+                     grp = new vector<unsigned int>; // grp is NULL now, which is not used anymore
+                     newFecGroups.forceInsert(uintKey(gates[*it2/2]->lastSimValue), grp);
+                     grp->push_back(*it2);
+                     gates[*it2/2]->curFECGroup = grp;
+                     gates[*it2/2]->invInFECGroup = *it2%2;
+                     // remove from original group
+                     it2 = (*it)->erase(it2);
+                  }
+                  else
+                  {
+                     it2++;
+                  }
+               }
+               else // found in the same old group
+               {
+                  if(gates[grpOld->at(0)/2]->lastSimValue != gates[(*it)->at(0)/2]->lastSimValue)
+                  {
+                     #if FEC_DEBUG
+                     cout << "Create a new group for " << *it2/2 << " at line " << __LINE__ << endl;
+                     #endif
+                     grp = new vector<unsigned int>; // grp is NULL now, which is not used anymore
+                     newFecGroups.forceInsert(uintKey(gates[*it2/2]->lastSimValue), grp);
+                     grp->push_back(*it2);
+                     gates[*it2/2]->curFECGroup = grp;
+                     gates[*it2/2]->invInFECGroup = *it2%2;
+                     // remove from original group
+                     it2 = (*it)->erase(it2);
+                  }
+                  else
+                  {
+                     it2++; // in such scenario, nothing shout be done
+                  }
+               }
+            }
+            else // not inv in fec group
+            {
+               if(foundOld && grpOld != *it)
+               {
+                  if(gates[grpOld->at(0)/2]->lastSimValue != gates[(*it)->at(0)/2]->lastSimValue)
+                  {
+                     #if FEC_DEBUG
+                     cout << "Create a new group for " << *it2/2 << " at line " << __LINE__ << endl;
+                     #endif
+                     grp = new vector<unsigned int>; // grp is NULL now, which is not used anymore
+                     newFecGroups.forceInsert(uintKey(gates[*it2/2]->lastSimValue), grp);
+                     grp->push_back(*it2);
+                     gates[*it2/2]->curFECGroup = grp;
+                     gates[*it2/2]->invInFECGroup = *it2%2;
+                     // remove from original group
+                     it2 = (*it)->erase(it2);
+                  }
+                  else
+                  {
+                     it2++;
+                  }
+               }
+               else // found in the same old group
+               {
+                  if(gates[grpOldInv->at(0)/2]->lastSimValue != ~gates[(*it)->at(0)/2]->lastSimValue)
+                  {
+                     #if FEC_DEBUG
+                     cout << "Create a new group for " << *it2/2 << " at line " << __LINE__ << endl;
+                     #endif
+                     grp = new vector<unsigned int>; // grp is NULL now, which is not used anymore
+                     newFecGroups.forceInsert(uintKey(gates[*it2/2]->lastSimValue), grp);
+                     grp->push_back(*it2);
+                     gates[*it2/2]->curFECGroup = grp;
+                     gates[*it2/2]->invInFECGroup = *it2%2;
+                     // remove from original group
+                     it2 = (*it)->erase(it2);
+                  }
+                  else
+                  {
+                     it2++; // in such scenario, nothing shout be done
+                  }
+               }
+            }
+         }*/
+         #if FEC_DEBUG
          cout << "===============\n";
-         for(Hash<uintKey, vector<unsigned int>*>::iterator hashIt = curFecGroups.begin();hashIt != curFecGroups.end();hashIt++)
+         /*for(Hash<uintKey, vector<unsigned int>*>::iterator hashIt = curFecGroups.begin();hashIt != curFecGroups.end();hashIt++)
          {
             for(vector<unsigned int>::iterator itGate = (*hashIt)->begin();itGate != (*hashIt)->end();itGate++)
             {
@@ -361,7 +446,7 @@ void CirMgr::realSim(unsigned int N)
             }
             cout << endl;
          }
-         cout << "---------------\n";
+         cout << "---------------\n";*/
          for(Hash<uintKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
          {
             for(vector<unsigned int>::iterator itGate = (*hashIt)->begin();itGate != (*hashIt)->end();itGate++)
@@ -383,17 +468,24 @@ void CirMgr::realSim(unsigned int N)
       // http://stackoverflow.com/questions/1041620/most-efficient-way-to-erase-duplicates-and-sort-a-c-vector
       /*sort(fecGroups.begin(), fecGroups.end());
       fecGroups.erase(unique(fecGroups.begin(), fecGroups.end()), fecGroups.end());*/
-      #if SIM_DEBUG
+      #if FEC_DEBUG
       printFECPairs();
       cout.flush();
       #endif
    }
-   // sometimes a group with only 0 left
-   vector<unsigned int>* firstGroup = fecGroups.front();
-   if(firstGroup->at(0) == 0 && firstGroup->size() == 1)
+   // cleanup groups with only one element
+   for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();)
    {
-      fecGroups.erase(fecGroups.begin());
+      if((*it)->size() == 1)
+      {
+         it = fecGroups.erase(it);
+      }
+      else
+      {
+         it++;
+      }
    }
+   cout << "\nTotal #FEC Group = " << fecGroups.size();
    delete [] results;
    delete simCache;
    simCache = NULL;
