@@ -45,6 +45,24 @@ private:
    unsigned int n;
 };
 
+class SimValueKey
+{
+public:
+   SimValueKey(unsigned int n): value((n > 0x7fffffff)?(~n):(n))
+   {
+   }
+   bool operator==(const SimValueKey& k) const
+   {
+      return (this->value == k.value);
+   }
+   size_t operator() () const
+   {
+      return value;
+   }
+private:
+   unsigned int value;
+};
+
 extern size_t getHashSize(size_t s); // in util/util.cpp
 
 /**************************************/
@@ -232,7 +250,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
       #if SIM_PERFORMANCE
       //cout << "Hash size = " << hashSize << ", clock = " << clock() << endl;
       #endif
-      Hash<uintKey, vector<unsigned int>*> newFecGroups(hashSize);
+      Hash<SimValueKey, vector<unsigned int>*> newFecGroups(hashSize);
       vector<unsigned int> curGroupCopy;
       curGroupCopy.reserve((*it)->size());
       for(vector<unsigned int>::iterator it2 = (*it)->begin();it2 != (*it)->end();it2++)
@@ -249,34 +267,26 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
             continue;
          }
          vector<unsigned int> *grpNew;
-         if(!newFecGroups.check(uintKey(g->lastSimValue), grpNew))
+         if(!newFecGroups.check(SimValueKey(g->lastSimValue), grpNew))
          {
-            if(!newFecGroups.check(uintKey(~g->lastSimValue), grpNew))
-            {
-               #if FEC_DEBUG
-               cout << "Create a new group for " << curID/2 << " at line " << __LINE__ << endl;
-               #endif
-               #if SIM_PERFORMANCE
-               cout << "Create a new group, clock = " << clock() << endl;
-               #endif
-               grpNew = new vector<unsigned int>(1, curID & 0xfffffffe); // set inv bit to zero
-               newFecGroups.forceInsert(uintKey(g->lastSimValue), grpNew);
-               g->curFECGroup = grpNew;
-            }
-            else
-            {
-               grpNew->push_back(curID | 1);
-               g->curFECGroup = grpNew;
-            }
+            #if FEC_DEBUG
+            cout << "Create a new group for " << curID/2 << " at line " << __LINE__ << endl;
+            #endif
+            #if SIM_PERFORMANCE
+            cout << "Create a new group, clock = " << clock() << endl;
+            #endif
+            grpNew = new vector<unsigned int>(1, curID & 0xfffffffe); // set inv bit to zero
+            newFecGroups.forceInsert(SimValueKey(g->lastSimValue), grpNew);
+            g->curFECGroup = grpNew;
          }
          else
          {
-            grpNew->push_back(curID);
+            grpNew->push_back(curID | (g->lastSimValue == ~gates[(*grpNew)[0]/2]->lastSimValue));
             g->curFECGroup = grpNew;
          }
          #if FEC_DEBUG
          cout << "===============\n";
-         for(Hash<uintKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
+         for(Hash<SimValueKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
          {
             for(vector<unsigned int>::iterator itGate = (*hashIt)->begin();itGate != (*hashIt)->end();itGate++)
             {
@@ -287,7 +297,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          #endif
       }
       **it = curGroupCopy;
-      for(Hash<uintKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
+      for(Hash<SimValueKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
       {
          if((*hashIt)->size() > 1) // groups with only one element are not "FEC pairs"
          {
