@@ -36,6 +36,7 @@ public:
        curFECGroup(NULL), 
        invInFECGroup(false)
    {
+      fanin[0] = fanin[1] = -1;
    }
    virtual ~CirGate() {}
 

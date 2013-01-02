@@ -29,6 +29,11 @@ class CirAndGate;
 class CirConstGate;
 class uintKey; // in cirSim.cpp
 
+enum ListType {
+   NORMAL_LIST,   // IDs in this group are exactly id
+   DOUBLED_LIST   // IDs in this group are in the form 2*id+inv
+};
+
 // TODO: Define your own data members and member functions
 class CirMgr
 {
@@ -102,7 +107,8 @@ private:
    void buildNotInDFS2();
 
    // simulation functions
-   void realSim(unsigned int N = 32);
+   bool realSim(unsigned int N = 32, bool onlyFEC = false);
+   void gateListSim(vector<unsigned int>* gates, enum ListType listType, unsigned int N, unsigned int* results, bool processPI);
    unsigned int gateSim(unsigned int gateID, unsigned int N);
 };
 
