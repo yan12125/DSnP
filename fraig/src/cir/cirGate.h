@@ -33,8 +33,7 @@ public:
        lineNo(_line), 
        dfsOrder(-1), 
        lastSimValue(0), 
-       curFECGroup(NULL), 
-       invInFECGroup(false)
+       curFECGroup(NULL)
    {
       fanin[0] = fanin[1] = -1;
    }
@@ -70,7 +69,6 @@ protected:
    int dfsOrder;  // not visited is -1, NOT 0!!!
    unsigned int lastSimValue;
    vector<unsigned int>* curFECGroup;
-   bool invInFECGroup;
 };
 
 class CirAndGate: public CirGate

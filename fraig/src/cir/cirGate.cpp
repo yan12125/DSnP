@@ -60,7 +60,7 @@ CirGate::reportGate() const
       {
          if(*it/2 != this->getID())
          {
-            if(invInFECGroup)
+            if(this->lastSimValue == ~cirMgr->getGate(curFECGroup->at(0)/2)->lastSimValue)
             {
                ss << ((*it%2)?"":"!");
             }

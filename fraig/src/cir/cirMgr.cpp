@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdio>
+#include <cstdlib>
 #include <ctype.h>
 #include <cassert>
 #include <cstring>
@@ -159,6 +160,7 @@ parseError(CirParseError err)
 /**************************************************************/
 CirMgr::CirMgr() :fCir(NULL), hasCircuit(false), M(0), I(0), L(0), O(0), A(0), gates(NULL)
 {
+   srand(time(NULL));
 }
 
 CirMgr::~CirMgr()
@@ -173,6 +175,8 @@ CirMgr::~CirMgr()
    }
    delete [] gates;
    delete [] PImap;
+   delete [] results;
+   delete [] simValues;
 }
 
 bool
@@ -212,6 +216,9 @@ CirMgr::readCircuit(const string& fileName)
                PI.reserve(I);
                PO.reserve(O);
                AIGinDFSOrder.reserve(A);
+               // for simulation 
+               results = new unsigned int[this->O];
+               simValues = new unsigned int[this->I];
                curSec = input;
             }
             break;
