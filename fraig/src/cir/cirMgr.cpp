@@ -175,7 +175,6 @@ CirMgr::~CirMgr()
    }
    delete [] gates;
    delete [] PImap;
-   delete [] results;
    delete [] simValues;
 }
 
@@ -217,7 +216,6 @@ CirMgr::readCircuit(const string& fileName)
                PO.reserve(O);
                AIGinDFSOrder.reserve(A);
                // for simulation 
-               results = new unsigned int[this->O];
                simValues = new unsigned int[this->I];
                curSec = input;
             }

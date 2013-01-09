@@ -92,7 +92,6 @@ private:
    unsigned int* PImap;  // which PI is id N?
    Cache<uintKey, unsigned int>* simCache;
    unsigned int* simValues;
-   unsigned int* results;
    vector<vector<unsigned int>* > fecGroups;
    
    /* helper functions */

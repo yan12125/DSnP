@@ -228,7 +228,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          *_simLog << ' ';
          for(unsigned int j = 0;j < this->O;j++)
          {
-            *_simLog << ((results[j] & (1LL << i))?'1':'0');
+            *_simLog << ((gates[this->M+j+1]->lastSimValue & (1LL << i))?'1':'0');
          }
          *_simLog << "\n";
       }
@@ -355,11 +355,9 @@ void CirMgr::gateListSim(vector<unsigned int>* gateList, unsigned int N, bool pr
       {
          tmpResult = 0;
       }
-      results[count] = gates[gateID]->fanin[0]%2?~tmpResult:tmpResult;
-      gates[gateID]->lastSimValue = results[count];
+      gates[gateID]->lastSimValue = gates[gateID]->fanin[0]%2?~tmpResult:tmpResult;
       #if SIM_DEBUG
-      cout << "Last sim value for gate " << gateID << " = " << hex << results[count] << dec << ", Line " << __LINE__ << endl;
-      cout << "[" << count << "] " << results[count] << endl;
+      cout << "Last sim value for gate " << gateID << " = " << hex << gates[gateID]->lastSimValue << dec << ", Line " << __LINE__ << endl;
       #endif
       count++;
    }
