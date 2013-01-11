@@ -107,7 +107,7 @@ CirMgr::randomSim()
          break;
       }
    }
-   cout << "\n" << nCycles*32 << " pattern simualted.";
+   cout << nCycles*32 << " pattern simualted.";
 }
 
 void
@@ -185,7 +185,7 @@ CirMgr::fileSim(ifstream& patternFile)
       #endif
       realSim(nSim%32);
    }
-   cout << "\n" << nSim << " patterns simulated." << endl;
+   cout << nSim << " patterns simulated." << endl;
 }
 
 /*************************************************/
@@ -321,7 +321,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          it++;
       }
    }
-   cout << "\nTotal #FEC Group = " << fecGroups.size();
+   cout << "Total #FEC Group = " << fecGroups.size() << "\n";
    delete simCache;
    simCache = NULL;
 }

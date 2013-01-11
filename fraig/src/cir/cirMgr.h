@@ -21,6 +21,7 @@ using namespace std;
 
 #include "cirDef.h"
 #include "myHash.h"
+#include "sat.h"
 
 extern CirMgr *cirMgr;
 
@@ -93,6 +94,7 @@ private:
    Cache<uintKey, unsigned int>* simCache;
    unsigned int* simValues;
    vector<vector<unsigned int>* > fecGroups;
+   SatSolver* satSolver;
    
    /* helper functions */
    unsigned int buildDFSOrder(CirGate*, unsigned int, vector<unsigned int>*, bool);
@@ -105,6 +107,10 @@ private:
    void realSim(unsigned int N = 32, bool isRandom = false);
    void gateListSim(vector<unsigned int>* gates,unsigned int N, bool processPI);
    unsigned int gateSim(unsigned int gateID, unsigned int N);
+
+   // fraig functions
+   bool solveBySat(unsigned int id1, unsigned int id2); // both id are 2*id+inv
+   void satInitialize();
 };
 
 #endif // CIR_MGR_H

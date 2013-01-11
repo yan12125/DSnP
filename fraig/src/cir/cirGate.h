@@ -14,6 +14,7 @@
 #include <iostream>
 #include <list>
 #include "cirDef.h"
+#include "sat.h"
 
 using namespace std;
 
@@ -33,7 +34,8 @@ public:
        lineNo(_line), 
        dfsOrder(-1), 
        lastSimValue(0), 
-       curFECGroup(NULL)
+       curFECGroup(NULL), 
+       touchedInFraig(false)
    {
       fanin[0] = fanin[1] = -1;
    }
@@ -69,6 +71,8 @@ protected:
    int dfsOrder;  // not visited is -1, NOT 0!!!
    unsigned int lastSimValue;
    vector<unsigned int>* curFECGroup;
+   Var satVar;
+   bool touchedInFraig;
 };
 
 class CirAndGate: public CirGate

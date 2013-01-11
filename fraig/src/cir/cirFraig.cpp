@@ -118,12 +118,133 @@ CirMgr::strash()
 void
 CirMgr::fraig()
 {
+   for(unsigned int i = 0;i < this->I;i++)
+   {
+      simValues[i] = 0; // later will use model value from sat solver to simulate
+   }
+   int count = 0;
+   for(vector<unsigned int>::iterator it = AIGinDFSOrder.begin();it != AIGinDFSOrder.end();it++)
+   {
+      vector<unsigned int>* curGroup = gates[*it]->curFECGroup;
+      if(curGroup)
+      {
+         if(curGroup->size() == 1) // merged beforehand
+         {
+            continue;
+         }
+         bool inv = (gates[*it]->lastSimValue == ~gates[(*curGroup)[0]/2]->lastSimValue);
+         // find first gate not processed during fraig
+         vector<unsigned int>::iterator it2 = curGroup->begin();
+         for(;it2 != curGroup->end();it2++)
+         {
+            if(!gates[*it2/2]->touchedInFraig && *it2/2 != *it)
+            {
+               break;
+            }
+         }
+         if(it2 == curGroup->end()) // all gates "touched"
+         {
+            continue;
+         }
+         gates[*it]->touchedInFraig = true;
+         bool result = solveBySat(2*(*it)+inv, *it2);
+         if(result) // true (SAT) means not FEC anymore
+         {
+            for(vector<unsigned int>::iterator it3 = PI.begin();it3 != PI.end();it3++)
+            {
+               unsigned int modelValue = satSolver->getValue(gates[*it3/2]->satVar);
+               simValues[PImap[*it3/2]] += (modelValue << count);
+            }
+            count++;
+         }
+      }
+      if(count == 32)
+      {
+         cout << "\nUpdating by SAT... ";
+         realSim();
+         for(unsigned int i = 0;i < this->I;i++)
+         {
+            simValues[i] = 0; // later will use model value from sat solver to simulate
+         }
+         count = 0;
+      }
+   }
    for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
    {
       delete *it;
+   }
+   // clear fraig flags on gates
+   for(unsigned int i = 1;i <= M;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->touchedInFraig = false;
+      }
    }
 }
 
 /********************************************/
 /*   Private member functions about fraig   */
 /********************************************/
+
+bool CirMgr::solveBySat(unsigned int id1, unsigned int id2)
+{
+   if(!satSolver)
+   {
+      satInitialize();
+   }
+   satSolver->assumeRelease();
+   if(id2/2 == 0) // const
+   {              // id1 is always 2*(*it)+inv, and it AIG, so id1 never const
+      cout << "\nProving " << id1/2 << " = " << (id1%2?"0":"1") << "...";
+      satSolver->assumeProperty(gates[id1/2]->satVar, !(id1%2));
+   }
+   else
+   {
+      cout << "\nProving (" << (id1%2?"!":"") << id1/2 << ", "
+           << (id2%2?"!":"") << id2/2 << ")...";
+      Var f = satSolver->newVar();
+      satSolver->addXorCNF(f, gates[id1/2]->satVar, id1%2, 
+                             gates[id2/2]->satVar, id2%2);
+      satSolver->assumeProperty(f, true);
+   }
+   bool result = satSolver->assumpSolve();
+   cout << (result?"SAT!!":"UNSAT!!");
+   return result;
+}
+
+void CirMgr::satInitialize()
+{
+   if(satSolver)
+   {
+      return;
+   }
+   satSolver = new SatSolver();
+   satSolver->initialize();
+
+   // Assign a Var to each gate
+   // PO not included because POs are never merged
+   // But PIs are included because they're referenced
+   for(unsigned int i = 1;i <= M;i++)
+   {
+      if(gates[i])
+      {
+         gates[i]->satVar = satSolver->newVar();
+      }
+   }
+   // Add AIGs into solver
+   for(unsigned int i = 1;i <= M;i++)
+   {
+      if(gates[i])
+      {
+         if(gates[i]->gateType == AIG_GATE)
+         {
+            CirGate *g1 = gates[gates[i]->fanin[0]/2], 
+                    *g2 = gates[gates[i]->fanin[1]/2];
+            satSolver->addAigCNF(gates[i]->satVar, 
+                  g1->satVar, gates[i]->fanin[0]%2, 
+                  g2->satVar, gates[i]->fanin[1]%2);
+         }
+      }
+   }
+}

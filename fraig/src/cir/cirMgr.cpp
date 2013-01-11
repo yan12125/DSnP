@@ -158,7 +158,12 @@ parseError(CirParseError err)
 /**************************************************************/
 /*   class CirMgr member functions for circuit construction   */
 /**************************************************************/
-CirMgr::CirMgr() :fCir(NULL), hasCircuit(false), M(0), I(0), L(0), O(0), A(0), gates(NULL)
+CirMgr::CirMgr() :
+   fCir(NULL), 
+   hasCircuit(false), 
+   M(0), I(0), L(0), O(0), A(0), 
+   gates(NULL), 
+   satSolver(NULL)
 {
    srand(time(NULL));
 }
