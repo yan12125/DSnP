@@ -136,78 +136,22 @@ CirMgr::optimize()
          {
             target = gates[*it]->fanin[0];
          }
-         cout << "Simplifying: " << target/2 << " merging " << (target%2?"!":"") << *it << "...\n";
-         vector<unsigned int>* _fanout = &(gates[*it]->fanout);
-         for(vector<unsigned int>::iterator it2 = _fanout->begin();it2 != _fanout->end();it2++)
-         {
-            gates[*it2]->replaceFanin(*it, target);
-         }
-         gates[target/2]->replaceFanout(*it, _fanout);
-         if(target/2 != 0)
-         {
-            vector<unsigned int>::iterator itConstFanout = find(gates[0]->fanout.begin(), gates[0]->fanout.end(), *it);
-            assert(itConstFanout != gates[0]->fanout.end());
-            gates[0]->fanout.erase(itConstFanout);
-         }
-         delete gates[*it];
-         gates[*it] = NULL;
+         merge(target & 0xfffffffe, 2*(*it)+(target%2), "Simplifying");
       }
       else if(gates[*it]->fanin[0] == 0 || gates[*it]->fanin[1] == 0) // type B
       {
-         unsigned int target = 0;
-         if(gates[*it]->fanin[0] == 0)
-         {
-            target = gates[*it]->fanin[1];
-         }
-         else
-         {
-            target = gates[*it]->fanin[0];
-         }
-         cout << "Simplifying: 0 merging " << *it << "...\n";
-         vector<unsigned int>* _fanout = &(gates[*it]->fanout);
-         for(vector<unsigned int>::iterator it2 = _fanout->begin();it2 != _fanout->end();it2++)
-         {
-            gates[*it2]->replaceFanin(*it, 0);
-            gates[0]->fanout.push_back(*it2);
-         }
-         gates[target/2]->removeFanout(*it);
-         if(target/2 != 0)
-         {
-            vector<unsigned int>::iterator itConstFanout = find(gates[0]->fanout.begin(), gates[0]->fanout.end(), *it);
-            assert(itConstFanout != gates[0]->fanout.end());
-            gates[0]->fanout.erase(itConstFanout);
-         }
-         delete gates[*it];
-         gates[*it] = NULL;
+         merge(0, 2*(*it), "Simplifying");
       }
       else if(gates[*it]->fanin[0] == gates[*it]->fanin[1]) // type C
       {
          int target = gates[*it]->fanin[0];
-         cout << "Simplifying: " << target/2 << " merging " << (target%2?"!":"") << *it << "...\n";
-         vector<unsigned int>* _fanout = &(gates[*it]->fanout);
-         for(vector<unsigned int>::iterator it2 = _fanout->begin();it2 != _fanout->end();it2++)
-         {
-            gates[*it2]->replaceFanin(*it, target);
-         }
-         gates[target/2]->replaceFanout(*it, _fanout);
-         delete gates[*it];
-         gates[*it] = NULL;
+         merge(target & 0xfffffffe, 2*(*it)+(target%2), "Simplifying");
       }
       else if(gates[*it]->fanin[0]/2 == gates[*it]->fanin[1]/2) // type D
       {
          assert(gates[*it]->fanin[0]%2 != gates[*it]->fanin[1]%2);
-         unsigned int target = gates[*it]->fanin[0];
-         cout << "Simplifying: 0 merging " << *it << "...\n";
-         vector<unsigned int>* _fanout = &(gates[*it]->fanout);
-         for(vector<unsigned int>::iterator it2 = _fanout->begin();it2 != _fanout->end();it2++)
-         {
-            gates[*it2]->replaceFanin(*it, 0);
-            gates[0]->fanout.push_back(*it2);
-         }
-         gates[target/2]->removeFanout(*it);
+         merge(0, 2*(*it), "Simplifying");
          // Fanouts of CONST wouldn't include *it, so not processing
-         delete gates[*it];
-         gates[*it] = NULL;
       }
    }
    // undefs with no fanouts should be deleted
@@ -215,7 +159,6 @@ CirMgr::optimize()
    {
       if(gates[*it]->fanout.empty())
       {
-         assert(gates[*it]);
          delete gates[*it];
          gates[*it] = NULL;
          it = undefs.erase(it);
@@ -234,3 +177,111 @@ CirMgr::optimize()
 /*   Private member functions about optimization   */
 /***************************************************/
 
+void CirMgr::merge(unsigned int id1, unsigned int id2, string why)
+{
+   cout << why << ": " << inv(id1) << id1/2 << " merging " << inv(id2) << id2/2 << "..." << endl;
+   vector<unsigned int>* _fanout = &gates[id2/2]->fanout;
+   unsigned int* _fanin = gates[id2/2]->fanin;
+   if(id1 == 0)
+   {
+      if(_fanin[0]/2 == 0 || _fanin[1]/2 == 0)
+      {
+         unsigned int target;
+         if(_fanin[0]/2 == 0)
+         {
+            target = _fanin[1];
+         }
+         else
+         {
+            target = _fanin[0];
+         }
+         gates[0]->replaceFanout(id2/2, _fanout);
+         for(IdIterator it = _fanout->begin();it != _fanout->end();it++)
+         {
+            gates[*it]->replaceFanin(id2/2, id2%2);
+         }
+         if(target/2 != 0)
+         {
+            gates[target/2]->replaceFanout(id2/2, NULL);
+         }
+      }
+      else // two fanins of id2 are trivially inverse 
+      {    // (same gate with different phase) or proved by SAT
+         for(IdIterator it = _fanout->begin();it != _fanout->end();it++)
+         {
+            gates[*it]->replaceFanin(id2/2, 0);
+            gates[0]->fanout.push_back(*it); // CONST 0 is not in original fanout, so add directly
+         }
+         gates[_fanin[0]/2]->replaceFanout(id2/2, NULL);
+         if(_fanin[1]/2 != _fanin[0]/2) // proved by SAT
+         {
+            gates[_fanin[1]/2]->replaceFanout(id2/2, NULL);
+         }
+      }
+   }
+   else if(_fanin[0]/2 == id1/2 || _fanin[1]/2 == id1/2)
+   {
+      unsigned int target;
+      if(_fanin[0]/2 == id1/2)
+      {
+         target = _fanin[1];
+      }
+      else
+      {
+         target = _fanin[0];
+      }
+      gates[id1/2]->replaceFanout(id2/2, _fanout);
+      if(target == 1)
+      {
+         gates[0]->replaceFanout(id2/2, NULL);
+      }
+      else if(_fanin[0]/2 != _fanin[1]/2) // some cases proved in SAT...
+      {
+         // here target is (not trivially) equivalent to CONST !0
+         gates[target/2]->replaceFanout(id2/2, NULL);
+      }
+      for(IdIterator it = _fanout->begin();it != _fanout->end();it++)
+      {
+         gates[*it]->replaceFanin(id2/2, id1 ^ (id1%2 != id2%2));
+      }
+   }
+   else if(gates[id1/2]->fanin[0]/2 == id2/2 || gates[id1/2]->fanin[1]/2 == id2/2)
+   {
+      unsigned int target;
+      if(gates[id1/2]->fanin[0]/2 == id2/2)
+      {
+         target = gates[id1/2]->fanin[1];
+      }
+      else
+      {
+         target = gates[id1/2]->fanin[0];
+      }
+      gates[gates[id2/2]->fanin[0]/2]->replaceFanout(id1/2, _fanout);
+      if(target/2 == id2/2)
+      {
+         gates[id1/2]->fanin[0] = gates[id2/2]->fanin[0] ^ (id1%2 != id2%2);
+         gates[id1/2]->fanin[1] = gates[id2/2]->fanin[1] ^ (id1%2 != id2%2);
+      }
+      else if(target == 1)
+      {
+         gates[id1/2]->fanin[0] = gates[id2/2]->fanin[0] ^ (id1%2 != id2%2);
+         gates[id1/2]->fanin[1] = gates[id2/2]->fanin[1] ^ (id1%2 != id2%2);
+      }
+   }
+   else
+   {
+      gates[_fanin[0]/2]->replaceFanout(id2/2, NULL);
+      if(_fanin[0]/2 != _fanin[1]/2)
+      {
+         gates[_fanin[1]/2]->replaceFanout(id2/2, NULL);
+      }
+      for(IdIterator it = _fanout->begin();it != _fanout->end();it++)
+      {
+         gates[id1/2]->fanout.push_back(*it);
+         gates[*it]->replaceFanin(id2/2, id1);
+      }
+   }
+   // deleting...
+   delete gates[id2/2];
+   gates[id2/2] = NULL;
+}

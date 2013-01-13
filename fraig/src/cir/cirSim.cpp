@@ -113,6 +113,7 @@ CirMgr::randomSim()
 void
 CirMgr::fileSim(ifstream& patternFile)
 {
+   cout << "\n"; // mysterious \n in ref???
    unsigned int nSim = 0;
    // unsigned int are 32-bit long in most platform
    // http://blog.csdn.net/zhangzhenghe/article/details/6766581
@@ -123,7 +124,7 @@ CirMgr::fileSim(ifstream& patternFile)
    while(1)
    {
       string curLine;
-      getline(patternFile, curLine);
+      patternFile >> curLine;
       if(curLine.length() != this->I)
       {
          if(!curLine.empty())
@@ -185,7 +186,7 @@ CirMgr::fileSim(ifstream& patternFile)
       #endif
       realSim(nSim%32);
    }
-   cout << nSim << " patterns simulated." << endl;
+   cout << ((PI.size() != 0 && PO.size() != 0)?nSim:0) << " patterns simulated." << endl;
 }
 
 /*************************************************/
@@ -195,6 +196,20 @@ CirMgr::fileSim(ifstream& patternFile)
 // return value indicate whether fecGroups changed or not
 void CirMgr::realSim(unsigned int N, bool isRandom)
 {
+   if(!isRandom || _simLog)
+   {
+      for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
+      {
+         gates[*it/2]->lastSimValue = simValues[PImap[*it/2]];
+         #if SIM_DEBUG
+         cout << "Last sim value for gate " << *it/2 << " = " << hex << gates[*it/2]->lastSimValue << dec << ", Line " << __LINE__ << endl;
+         #endif
+      }
+   }
+   if(PO.size() == 0 || PI.size() == 0)
+   {
+      return;
+   }
    simCache = new Cache<uintKey, unsigned int>(getHashSize(this->M));
    if(fecGroups.size() == 0)
    {
@@ -216,8 +231,8 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          }
       }
    }
-   gateListSim(&PO, N, !isRandom || _simLog); // the function really do simulation
-   if(_simLog)
+   gateListSim(&PO, N);
+   if(_simLog && PI.size() != 0)
    {
       for(unsigned int i = 0;i < N;i++)
       {
@@ -253,7 +268,8 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
       Hash<SimValueKey, vector<unsigned int>*> newFecGroups(hashSize);
       vector<unsigned int> curGroupCopy;
       curGroupCopy.reserve((*it)->size());
-      for(vector<unsigned int>::iterator it2 = (*it)->begin();it2 != (*it)->end();it2++)
+      curGroupCopy.push_back((*it)->front());
+      for(vector<unsigned int>::iterator it2 = (*it)->begin()+1;it2 != (*it)->end();it2++)
       {
          unsigned int curID = *it2;
          CirGate* g = gates[curID/2];
@@ -303,6 +319,11 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          {
             fecGroups.push_back(*hashIt);
          }
+         else
+         {
+            gates[(*hashIt)->front()/2]->curFECGroup = NULL;
+            delete *hashIt;
+         }
       }
       #if FEC_DEBUG
       printFECPairs();
@@ -314,6 +335,8 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
    {
       if((*it)->size() == 1)
       {
+         gates[(*it)->front()/2]->curFECGroup = NULL;
+         delete *it;
          it = fecGroups.erase(it);
       }
       else
@@ -321,13 +344,20 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          it++;
       }
    }
-   cout << "Total #FEC Group = " << fecGroups.size() << "\n";
+   if(PI.size())
+   {
+      cout << "Total #FEC Group = " << fecGroups.size() << "\n";
+   }
    delete simCache;
    simCache = NULL;
 }
 
-void CirMgr::gateListSim(vector<unsigned int>* gateList, unsigned int N, bool processPI)
+void CirMgr::gateListSim(vector<unsigned int>* gateList, unsigned int N)
 {
+   if(gateList->size() == 0)
+   {
+      return;
+   }
    unsigned int count = 0;
    unsigned int *firstGate = &gateList->front(), *lastGate = &gateList->back();
    for(unsigned int* it = firstGate;it <= lastGate;it++)
@@ -360,16 +390,6 @@ void CirMgr::gateListSim(vector<unsigned int>* gateList, unsigned int N, bool pr
       cout << "Last sim value for gate " << gateID << " = " << hex << gates[gateID]->lastSimValue << dec << ", Line " << __LINE__ << endl;
       #endif
       count++;
-   }
-   if(processPI)
-   {
-      for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
-      {
-         gates[*it/2]->lastSimValue = simValues[PImap[*it/2]];
-         #if SIM_DEBUG
-         cout << "Last sim value for gate " << *it/2 << " = " << hex << gates[*it/2]->lastSimValue << dec << ", Line " << __LINE__ << endl;
-         #endif
-      }
    }
 }
 

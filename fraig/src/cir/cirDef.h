@@ -23,7 +23,8 @@ class SatSolver;
 
 typedef vector<CirGate*>           GateList;
 typedef vector<CirGateV>           GateVList;
-typedef vector<unsigned>           IdList;
+typedef vector<unsigned int>       IdList;
+typedef vector<unsigned>::iterator IdIterator;
 typedef CirGate**                  GateArray;
 typedef CirPiGate**                PiArray;
 typedef CirPoGate**                PoArray;

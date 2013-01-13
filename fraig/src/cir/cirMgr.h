@@ -23,6 +23,8 @@ using namespace std;
 #include "myHash.h"
 #include "sat.h"
 
+#define inv(x) ((x)%2?"!":"")
+
 extern CirMgr *cirMgr;
 
 class CirIOGate;
@@ -103,9 +105,11 @@ private:
    void buildDefinedButNotUsed();
    void buildNotInDFS2();
 
+   // Optimization functions
+   void merge(unsigned int, unsigned int, string why);
    // simulation functions
    void realSim(unsigned int N = 32, bool isRandom = false);
-   void gateListSim(vector<unsigned int>* gates,unsigned int N, bool processPI);
+   void gateListSim(vector<unsigned int>* gates,unsigned int N);
    unsigned int gateSim(unsigned int gateID, unsigned int N);
 
    // fraig functions

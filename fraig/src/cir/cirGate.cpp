@@ -268,9 +268,12 @@ void CirGate::replaceFanout(unsigned int orig, vector<unsigned int>* _fanout)
       }
    }
    assert(hasDeleted);
-   for(vector<unsigned int>::iterator it = _fanout->begin();it != _fanout->end();it++)
+   if(_fanout != NULL)
    {
-      this->fanout.push_back(*it);
+      for(vector<unsigned int>::iterator it = _fanout->begin();it != _fanout->end();it++)
+      {
+         this->fanout.push_back(*it);
+      }
    }
    #if OPT_DEBUG
    /*for(vector<unsigned int>::iterator it = fanout.begin();it != fanout.end();it++)
@@ -306,24 +309,6 @@ void CirGate::replaceFanout(unsigned int orig, vector<unsigned int>* _fanout)
    }
    assert(false); // specified gate must be in fanin
 }*/
-
-void CirGate::removeFanout(unsigned int orig)
-{
-   bool hasDelete = false;
-   for(vector<unsigned int>::iterator it = fanout.begin();it != fanout.end();)
-   {
-      if(*it == orig)
-      {
-         it = fanout.erase(it);
-         hasDelete = true;
-      }
-      else
-      {
-         it++;
-      }
-   }
-   assert(hasDelete);
-}
 
 string CirGate::getTypeStr() const
 {

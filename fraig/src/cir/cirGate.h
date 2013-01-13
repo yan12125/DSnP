@@ -55,7 +55,6 @@ public:
    void reportFanoutInternal(int level, int indent, bool invert, list<const CirGate*> *reported) const;
 
    void removeFanout(bool* removed); // used in sweep
-   void removeFanout(unsigned int orig); // remove single fanout
    //void removeFanin(unsigned int); // used in strash
    void replaceFanin(unsigned int orig, unsigned int repl); // used in opt
    void replaceFanout(unsigned int orig, vector<unsigned int>* _fanout); // used in opt, strash
