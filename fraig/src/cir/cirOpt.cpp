@@ -32,10 +32,7 @@ using namespace std;
 void
 CirMgr::sweep()
 {
-   if(notInDFS2.empty())
-   {
-      buildNotInDFS2();
-   }
+   buildNotInDFS2();
    bool* removed = new bool[M+O+1];
    for(unsigned int i = 0;i < M+O+1;i++)
    {
@@ -114,7 +111,6 @@ CirMgr::sweep()
    sort(notInDFS.begin(), notInDFS.end());
    notInDFS.erase(unique(notInDFS.begin(), notInDFS.end()), notInDFS.end());
    delete [] removed;
-   buildNotInDFS2();
 }
 
 // Recursively simplifying from POs;

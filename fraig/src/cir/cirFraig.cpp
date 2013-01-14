@@ -92,6 +92,7 @@ CirMgr::strash()
    delete gatesHash;
    buildDFSwrapper();
    buildFloatingFanin();
+   buildDefinedButNotUsed();
 }
 
 void
@@ -203,17 +204,20 @@ CirMgr::fraig()
    realSim(count);
    // It's possible that fecGroups still not empty: "model value collision"
    // I just discard them
-   for(vector<IdList*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
+   if(!fecGroups.empty())
    {
-      for(IdIterator it2 = (*it)->begin();it2 != (*it)->end();it2++)
+      for(vector<IdList*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
       {
-         gates[*it2/2]->curFECGroup = NULL;
+         for(IdIterator it2 = (*it)->begin();it2 != (*it)->end();it2++)
+         {
+            gates[*it2/2]->curFECGroup = NULL;
+         }
+         delete *it;
+         *it = NULL;
       }
-      delete *it;
-      *it = NULL;
+      fecGroups.clear();
+      cout << "Cleaning... Total #FEC Group = 0\n";
    }
-   fecGroups.clear();
-   cout << "Cleaning... Total #FEC Group = 0\n";
    // Merging...
    for(vector<pair<unsigned int, unsigned int> >::iterator it = toBeMerged.begin();it != toBeMerged.end();it++)
    {
