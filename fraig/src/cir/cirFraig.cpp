@@ -144,7 +144,7 @@ CirMgr::fraig()
                fec[1] = fec[0];
                fec[0] = 0;
             }
-            else if((fec[0] != 0) && (gates[fec[0]/2]->fanin[0]/2 == fec[1]/2 || gates[fec[0]/2]->fanin[1]/2 == fec[1]/2))
+            else if((fec[0] != 0) && (gates[fec[0]/2]->dfsOrder > gates[fec[1]/2]->dfsOrder))
             {
                // to prevent difficult situation, only delete parent
                unsigned int temp = fec[0];
@@ -154,12 +154,10 @@ CirMgr::fraig()
             bool result = solveBySat(fec[0], fec[1]);
             if(result) // true (SAT) means not FEC anymore
             {
-               //cout << endl;
                for(vector<unsigned int>::iterator it3 = PI.begin();it3 != PI.end();it3++)
                {
                   unsigned int modelValue = satSolver->getValue(gates[*it3/2]->satVar);
                   simValues[PImap[*it3/2]] += (modelValue << count);
-                  //cout << modelValue;
                }
                count++;
                if(*it2/2 != 0) // CONST 0 can always used in proving
@@ -185,7 +183,7 @@ CirMgr::fraig()
             {
                simValues[i] = 0; // later will use model value from sat solver to simulate
             }
-            printFECPairs();
+            // printFECPairs();
             count = 0;
             // clear fraig flags on gates
             for(unsigned int i = 0;i <= M;i++)
@@ -203,7 +201,19 @@ CirMgr::fraig()
    }while(!ending);
    cout << "\nUpdating by SAT... ";
    realSim(count);
-   // fecGroups MUST be empty after simulate by SAT model values
+   // It's possible that fecGroups still not empty: "model value collision"
+   // I just discard them
+   for(vector<IdList*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
+   {
+      for(IdIterator it2 = (*it)->begin();it2 != (*it)->end();it2++)
+      {
+         gates[*it2/2]->curFECGroup = NULL;
+      }
+      delete *it;
+      *it = NULL;
+   }
+   fecGroups.clear();
+   cout << "Cleaning... Total #FEC Group = 0\n";
    // Merging...
    for(vector<pair<unsigned int, unsigned int> >::iterator it = toBeMerged.begin();it != toBeMerged.end();it++)
    {
@@ -211,6 +221,7 @@ CirMgr::fraig()
    }
    buildDFSwrapper();
    buildFloatingFanin();
+   buildDefinedButNotUsed();
 }
 
 /********************************************/

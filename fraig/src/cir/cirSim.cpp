@@ -295,9 +295,16 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
             newFecGroups.forceInsert(SimValueKey(g->lastSimValue), grpNew);
             g->curFECGroup = grpNew;
          }
-         else
+         else // exist in Hash, meaning FEC or inverse FEC
          {
-            grpNew->push_back(curID | (g->lastSimValue == ~gates[(*grpNew)[0]/2]->lastSimValue));
+            if(g->lastSimValue == ~gates[(*grpNew)[0]/2]->lastSimValue) // inverse FEC
+            {
+               grpNew->push_back(curID | 0x1);
+            }
+            else // normal FEC
+            {
+               grpNew->push_back(curID & 0xfffffffe); // set inv bit to zero
+            }
             g->curFECGroup = grpNew;
          }
          #if FEC_DEBUG
@@ -306,7 +313,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          {
             for(vector<unsigned int>::iterator itGate = (*hashIt)->begin();itGate != (*hashIt)->end();itGate++)
             {
-               cout << *itGate << " ";
+               cout << inv(*itGate) << *itGate/2 << " ";
             }
             cout << endl;
          }
