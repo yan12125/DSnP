@@ -241,29 +241,6 @@ void CirMgr::merge(unsigned int id1, unsigned int id2, string why)
          gates[*it]->replaceFanin(id2/2, id1 ^ (id1%2 != id2%2));
       }
    }
-   else if(gates[id1/2]->fanin[0]/2 == id2/2 || gates[id1/2]->fanin[1]/2 == id2/2)
-   {
-      unsigned int target;
-      if(gates[id1/2]->fanin[0]/2 == id2/2)
-      {
-         target = gates[id1/2]->fanin[1];
-      }
-      else
-      {
-         target = gates[id1/2]->fanin[0];
-      }
-      gates[gates[id2/2]->fanin[0]/2]->replaceFanout(id1/2, _fanout);
-      if(target/2 == id2/2)
-      {
-         gates[id1/2]->fanin[0] = gates[id2/2]->fanin[0] ^ (id1%2 != id2%2);
-         gates[id1/2]->fanin[1] = gates[id2/2]->fanin[1] ^ (id1%2 != id2%2);
-      }
-      else if(target == 1)
-      {
-         gates[id1/2]->fanin[0] = gates[id2/2]->fanin[0] ^ (id1%2 != id2%2);
-         gates[id1/2]->fanin[1] = gates[id2/2]->fanin[1] ^ (id1%2 != id2%2);
-      }
-   }
    else
    {
       gates[_fanin[0]/2]->replaceFanout(id2/2, NULL);

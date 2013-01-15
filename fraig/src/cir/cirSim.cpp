@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 #include "cirMgr.h"
 #include "cirGate.h"
 #include "util.h"
@@ -75,7 +76,8 @@ extern size_t getHashSize(size_t s); // in util/util.cpp
 void
 CirMgr::randomSim()
 {
-   unsigned int max_fails = 20; // test first
+   unsigned int max_fails = (unsigned int)sqrt(this->A);
+   cout << "MAX_FAILS = " << max_fails << endl;
    unsigned int failsNow = 0;
    unsigned int nCycles = 0;
    while(1)

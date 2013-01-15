@@ -37,7 +37,7 @@ if(! open REMOVE, "<MustRemove.txt"){
 #Get the student ID
 $arg = $ARGV[0];
 print "$arg is self checking!\n";
-@temp = split /_hw/, $arg;
+@temp = split /_fraig/, $arg;
 $usrID = $temp[0];
 print "StudentID:$usrID\n";
 

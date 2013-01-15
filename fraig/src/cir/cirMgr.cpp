@@ -212,7 +212,7 @@ CirMgr::readCircuit(const string& fileName)
             {
                // successfully parsed
                gates = new CirGate*[M+O+1]; // additional one for primitives (0 and 1)
-               gates[0] = new CirConstGate(false);
+               gates[0] = new CirConstGate();
                for(unsigned int i=1;i<M+O+1;i++)
                {
                   gates[i] = NULL;

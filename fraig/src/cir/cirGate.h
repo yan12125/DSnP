@@ -110,12 +110,10 @@ class CirConstGate: public CirGate
 public:
    friend class CirMgr;
    friend class CirGate;
-   CirConstGate(bool _value): CirGate(CONST_GATE, 0), value(_value){}
+   CirConstGate(): CirGate(CONST_GATE, 0){}
    ~CirConstGate(){};
    virtual unsigned int getID() const;
 private:
-   CirConstGate();
-   bool value;
 };
 
 class CirUndefGate: public CirGate
