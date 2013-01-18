@@ -13,8 +13,6 @@
 
 using namespace std;
 
-#define HASH_DEBUG 0
-
 //--------------------
 // Define Hash classes
 //--------------------
@@ -102,9 +100,6 @@ public:
                break;
             }
          }
-         #if HASH_DEBUG
-         cout << __func__ << ": curBucket = " << curBucket - container->getBuckets() << ", itInternal =" << itInternal->second << endl;
-         #endif
          return *this;
       }
       iterator operator++(int) // suffix
@@ -138,9 +133,6 @@ public:
                break;
             }
          }
-         #if HASH_DEBUG
-         cout << __func__ << ": curBucket = " << curBucket - container->getBuckets() << ", itInternal =" << itInternal->second << endl;
-         #endif
          return *this;
       }
       iterator operator--(int)
@@ -178,14 +170,8 @@ public:
       if(availBucket == NULL)
       {
          vector<HashNode>* lastBucket = _buckets + _numBuckets - 1;
-         #if HASH_DEBUG
-         cout << __func__ << ": bucket = " << lastBucket - _buckets << ", no data" << endl;
-         #endif
          return iterator(this, lastBucket, lastBucket->end());
       }
-      #if HASH_DEBUG
-      cout << __func__ << ": bucket = " << availBucket - _buckets << ", data =" << availBucket->begin()->second << endl;
-      #endif
       return iterator(this, availBucket, availBucket->begin());
    }
    // Pass the end
@@ -195,14 +181,8 @@ public:
       vector<HashNode>* availBucket = lastBucket->empty()?getPrevAvailBucket(lastBucket):lastBucket;
       if(availBucket == NULL)
       {
-         #if HASH_DEBUG
-         cout << __func__ << ": bucket = " << lastBucket - _buckets << ", no data" << endl;
-         #endif
          return iterator(this, lastBucket, lastBucket->end());
       }
-      #if HASH_DEBUG
-      cout << __func__ << ": bucket = " << availBucket - _buckets << ", data =" << availBucket->begin()->second << endl;
-      #endif
       return iterator(this, availBucket, availBucket->end());
    }
    // return true if no valid data
@@ -362,12 +342,6 @@ private:
       }
       return NULL;
    }
-   #if HASH_DEBUG
-   vector<HashNode>* getBuckets() const
-   {
-      return _buckets;
-   }
-   #endif
 
 public:
    void printAll() const

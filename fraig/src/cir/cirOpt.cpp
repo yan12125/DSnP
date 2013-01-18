@@ -13,8 +13,6 @@
 #include "cirGate.h"
 #include "util.h"
 
-#define OPT_DEBUG 0 
-
 using namespace std;
 
 /*******************************/
@@ -74,16 +72,10 @@ CirMgr::sweep()
       // notInDFS is in fact defined but not used
       if(removed[*it])
       {
-         #if OPT_DEBUG
-         cout << "Remove " << *it << " from notInDFS\n";
-         #endif
          it = notInDFS.erase(it);
       }
       else
       {
-         #if OPT_DEBUG
-         cout << *it << " not removed from notInDFS\n";
-         #endif
          it++;
       }
    }

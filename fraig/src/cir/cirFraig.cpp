@@ -14,8 +14,6 @@
 #include "myHash.h"
 #include "util.h"
 
-#define FRAIG_DEBUG 0
-
 using namespace std;
 
 class FaninKey
@@ -43,9 +41,6 @@ public:
    size_t operator() () const
    {
       size_t retVal = fanin[0]+fanin[1]+(fanin[0]%256)*(fanin[1]%256);
-      #if FRAIG_DEBUG
-      cout << "Hash key for " << fanin[0] << " and " << fanin[1] << " = " << retVal << endl;
-      #endif
       return retVal;
    }
    bool operator==(const FaninKey& f) const
@@ -77,9 +72,6 @@ CirMgr::strash()
    {
       unsigned int match = 0;
       FaninKey targetKey(gates[*it]); // will used later if merged
-      #if FRAIG_DEBUG
-      cout << "Checking " << *it << "...\n";
-      #endif
       if(gatesHash->check(targetKey, match))
       {
          merge(2*match, 2*(*it), "Strashing");

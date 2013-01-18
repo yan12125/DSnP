@@ -17,10 +17,6 @@
 #include "cirMgr.h"
 #include "util.h"
 
-#define PARSE_DEBUG 0
-#define OPT_DEBUG 0
-#define SIM_DEBUG 0
-
 using namespace std;
 
 extern CirMgr *cirMgr;
@@ -53,9 +49,6 @@ CirGate::reportGate() const
    stringstream ss;
    if(curFECGroup)
    {
-      #if SIM_DEBUG
-      cout << "Not inv in FEC group" << endl;
-      #endif
       for(vector<unsigned int>::iterator it = curFECGroup->begin();it != curFECGroup->end();it++)
       {
          if(*it/2 != this->getID())
@@ -132,12 +125,6 @@ CirGate::reportFaninInternal(int level, int indent, bool invert, list<const CirG
       return;
    }
    reported->push_back(this);
-   /*for(vector<unsigned int>::const_iterator it = fanin.begin();it != fanin.end();it++)
-   {
-      CirGate* g = cirMgr->getGate((*it)/2);
-      // g must be a valid gate here
-      g->reportFaninInternal(level-1, indent+2, (*it)%2, reported);
-   }*/
    if(this->gateType == AIG_GATE)
    {
       cirMgr->getGate(fanin[0]/2)->reportFaninInternal(level-1, indent+2, fanin[0]%2, reported);
@@ -196,9 +183,6 @@ void CirGate::removeFanout(bool* removed)
 void CirGate::replaceFanin(unsigned int orig, unsigned int repl)
 {
    // repl is in the form 2*id+inv, while orig is id
-   #if OPT_DEBUG
-   cout << "Replacing fanin of " << this->getTypeStr() << " " << this->getID() << ", " << orig << "=>" << repl << endl;
-   #endif
    if(orig == repl/2)
    {
       return;
@@ -245,15 +229,6 @@ void CirGate::replaceFanin(unsigned int orig, unsigned int repl)
 
 void CirGate::replaceFanout(unsigned int orig, vector<unsigned int>* _fanout)
 {
-   #if OPT_DEBUG
-   cout << "Replacing fanout of " << this->getTypeStr() << " " << this->getID() << ", " << orig << "=>";
-   for(vector<unsigned int>::iterator it = _fanout->begin();it != _fanout->end();it++)
-   {
-      cout << " " << *it << ",";
-   }
-   cout << endl;
-   #endif
-   // 
    bool hasDeleted = false;
    for(vector<unsigned int>::iterator it = fanout.begin();it != fanout.end();)
    {
@@ -275,40 +250,9 @@ void CirGate::replaceFanout(unsigned int orig, vector<unsigned int>* _fanout)
          this->fanout.push_back(*it);
       }
    }
-   #if OPT_DEBUG
-   /*for(vector<unsigned int>::iterator it = fanout.begin();it != fanout.end();it++)
-   {
-      cout << *it << " ";
-   }
-   cout << "\n";*/
-   #endif
    //sort(fanout.begin(), fanout.end());
    //fanout.erase(unique(fanout.begin(), fanout.end()), fanout.end());
-   #if OPT_DEBUG
-   for(vector<unsigned int>::iterator it = fanout.begin();it != fanout.end();it++)
-   {
-      cout << *it << " ";
-   }
-   cout << "\n";
-   #endif
 }
-
-/*void CirGate::removeFanin(unsigned int target)
-{
-   for(vector<unsigned int>::iterator it = fanin.begin();it != fanin.end();)
-   {
-      if(*it/2 == target)
-      {
-         fanin.erase(it);
-         return;
-      }
-      else
-      {
-         it++;
-      }
-   }
-   assert(false); // specified gate must be in fanin
-}*/
 
 string CirGate::getTypeStr() const
 {
@@ -364,9 +308,6 @@ CirAndGate::CirAndGate(unsigned int o, unsigned int i1, unsigned int i2, unsigne
    inv[0] = o%2;
    inv[1] = i1%2;
    inv[2] = i2%2;
-   #if PARSE_DEBUG
-   cout << pin[0] << " = " << (inv[0]?"!(":"") << (inv[1]?"!":"") << pin[1] << " && " << (inv[2]?"!":"") << pin[2] << (inv[0]?")":"") << endl;
-   #endif
 }
 
 CirAndGate::~CirAndGate()
@@ -380,16 +321,10 @@ unsigned int CirAndGate::getID() const
 
 CirIOGate::CirIOGate(unsigned int _id, unsigned int _line): CirGate(PI_GATE, _line), id(_id/2), inverted(_id%2), name(""), n(-1)
 {
-   #if PARSE_DEBUG
-   cout << "Input" << " gate " << id << (inverted?" inverted":"") << endl;
-   #endif
 }
 
 CirIOGate::CirIOGate(unsigned int _id, int _n, unsigned int _line): CirGate(PO_GATE, _line), id(_id/2), inverted(_id%2), name(""), n(_n)
 {
-   #if PARSE_DEBUG
-   cout << "Output" << " gate " << id << ", " << n << (inverted?" inverted":"") << endl;
-   #endif
 }
 
 CirIOGate::~CirIOGate()
@@ -399,9 +334,6 @@ CirIOGate::~CirIOGate()
 void CirIOGate::setName(const string& _name)
 {
    name = _name;
-   #if PARSE_DEBUG
-   cout << "setName: " << _name << endl;
-   #endif
 }
 
 unsigned int CirIOGate::getID() const
@@ -423,9 +355,6 @@ unsigned int CirConstGate::getID() const
 
 CirUndefGate::CirUndefGate(unsigned int _id): CirGate(UNDEF_GATE, 0), id(_id)
 {
-   #if PARSE_DEBUG
-   cout << "Undefined " << id << endl;
-   #endif
 }
 
 unsigned int CirUndefGate::getID() const

@@ -23,9 +23,6 @@
 
 using namespace std;
 
-#define PARSE_DEBUG 0
-#define ERROR_DEBUG 1
-#define DFS_DEBUG 0
 #define PERFORMANCE 0
 
 // TODO: Implement memeber functions for class CirMgr
@@ -374,9 +371,6 @@ CirMgr::readCircuit(const string& fileName)
             {
                gates[tmp->pin[2]]->fanout.push_back(i);
             }
-            #if PARSE_DEBUG
-            //cout << "------------" << endl;
-            #endif
          }
       }
    }
@@ -389,9 +383,6 @@ CirMgr::readCircuit(const string& fileName)
       CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[*it]);
       if(gates[tmp->id])
       {
-         #if PARSE_DEBUG
-         cout << tmp->id << " fanout " << tmp->n << endl;
-         #endif
          gates[tmp->id]->fanout.push_back(tmp->n);
       }
    }
@@ -408,19 +399,12 @@ CirMgr::readCircuit(const string& fileName)
          if(gates[i]->gateType == AIG_GATE)
          {
             CirAndGate* tmp = reinterpret_cast<CirAndGate*>(gates[i]);
-            #if PARSE_DEBUG
-            cout << i << " fanin " << tmp->pin[1] << (tmp->inv[1]?" inverted":"") << "\n"
-                 << i << " fanin " << tmp->pin[2] << (tmp->inv[2]?" inverted":"") << endl;
-            #endif
             tmp->fanin[0] = tmp->pin[1]*2+tmp->inv[1];
             tmp->fanin[1] = tmp->pin[2]*2+tmp->inv[2];
          }
          if(gates[i]->gateType == PO_GATE)
          {
             CirIOGate* tmp = reinterpret_cast<CirIOGate*>(gates[i]);
-            #if PARSE_DEBUG
-            cout << i << " fanin " << tmp->id << endl;
-            #endif
             tmp->fanin[0] = tmp->id*2+tmp->inverted;
          }
       }
@@ -441,11 +425,6 @@ CirMgr::readCircuit(const string& fileName)
    cout << "Before finding floating fanin, clock = " << clock() << endl;
    #endif
    buildFloatingFanin();
-   /*#if PERFORMANCE
-   cout << "Before building not in DFS list, clock = " << clock() << endl;
-   #endif*/
-   /********* Build not in DFS list *********/
-   //buildNotInDFS2(); // not build here because it's rarely used
    // build PI map
    #if PERFORMANCE
    cout << "Before building PI map, clock = " << clock() << endl;
@@ -458,9 +437,6 @@ CirMgr::readCircuit(const string& fileName)
    }
    for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
    {
-      #if PARSE_DEBUG
-      cout << *it/2 << endl;
-      #endif
       PImap[*it/2] = count;
       count++;
    }
@@ -645,25 +621,11 @@ CirGate* CirMgr::getGate(unsigned int gid) const
          return gates[gid];
       }
    }
-   #if PARSE_DEBUG
-   cout << "Gate " << gid << " not found" << endl;
-   #endif
    return NULL;
 }
 
 unsigned int CirMgr::buildDFSOrder(CirGate* g, unsigned int curID, vector<unsigned int>* target, bool includeUndefs)
 {
-   #if DFS_DEBUG
-   cout << g->getID() << "\n";
-   #endif
-   /*for(vector<unsigned int>::iterator it = g->fanin.begin();it != g->fanin.end();it++)
-   {
-      if(gates[(*it)/2]->dfsOrder == -1 &&        // not visited
-         (includeUndefs?true:(gates[(*it)/2]->gateType != UNDEF_GATE)))  // undefined gates are not counted
-      {
-         curID = buildDFSOrder(gates[(*it)/2], curID, target, includeUndefs);
-      }
-   }*/
    if(g->gateType == AIG_GATE)
    {
       if(gates[g->fanin[0]/2]->dfsOrder == -1 &&        // not visited
