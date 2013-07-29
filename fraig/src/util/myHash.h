@@ -67,13 +67,13 @@ public:
       ~iterator()
       {
       }
-      const HashData& operator*() const
+      const HashNode& operator*() const
       {
-         return itInternal->second;
+         return *itInternal;
       }
-      HashData& operator*()
+      HashNode& operator*()
       {
-         return itInternal->second;
+         return *itInternal;
       }
       iterator& operator++() // prefix
       {

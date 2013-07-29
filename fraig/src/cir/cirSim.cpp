@@ -284,14 +284,14 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
       **it = curGroupCopy;
       for(Hash<SimValueKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
       {
-         if((*hashIt)->size() > 1) // groups with only one element are not "FEC pairs"
+         if(((*hashIt).second)->size() > 1) // groups with only one element are not "FEC pairs"
          {
-            fecGroups.push_back(*hashIt);
+            fecGroups.push_back((*hashIt).second);
          }
          else
          {
-            gates[(*hashIt)->front()/2]->curFECGroup = NULL;
-            delete *hashIt;
+            gates[((*hashIt).second)->front()/2]->curFECGroup = NULL;
+            delete (*hashIt).second;
          }
       }
    }

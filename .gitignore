@@ -1,6 +1,7 @@
 *.o
 *.o.ref*
 *.tgz
+*.zip
 *.doc
 *.pdf
 Slides
