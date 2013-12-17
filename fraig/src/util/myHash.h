@@ -406,11 +406,13 @@ public:
    // Initialize _cache with size s
    void init(size_t s)
    {
+      _size = s;
       _cache = new CacheNode[s];
    }
    void reset()
    {
       delete [] _cache;
+      _cache = NULL;
    }
 
    size_t size() const { return _size; }

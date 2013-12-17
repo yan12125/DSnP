@@ -163,6 +163,7 @@ CirMgr::CirMgr() :
    satSolver(NULL)
 {
    srand(time(NULL));
+   gettimeofday(&(this->tv0), NULL);
 }
 
 CirMgr::~CirMgr()
@@ -752,7 +753,7 @@ void
 CirMgr::printFECPairs() const
 {
    unsigned int count = 0;
-   for(vector<vector<unsigned int>* >::const_iterator it = fecGroups.begin();it != fecGroups.end();it++)
+   for(FecGroup::const_iterator it = fecGroups.begin();it != fecGroups.end();it++)
    {
       cout << "[" << count << "] ";
       for(vector<unsigned int>::iterator it2 = (*it)->begin();it2 != (*it)->end();)

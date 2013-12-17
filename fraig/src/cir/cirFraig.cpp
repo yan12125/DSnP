@@ -171,7 +171,7 @@ CirMgr::fraig()
          if(count == 32)
          {
             cout << "\nUpdating by SAT... ";
-            realSim();
+            realSim(32, false);
             for(unsigned int i = 0;i < this->I;i++)
             {
                simValues[i] = 0; // later will use model value from sat solver to simulate
@@ -193,12 +193,12 @@ CirMgr::fraig()
       }
    }while(!ending);
    cout << "\nUpdating by SAT... ";
-   realSim(count);
+   realSim(count, false);
    // It's possible that fecGroups still not empty: "model value collision"
    // I just discard them
    if(!fecGroups.empty())
    {
-      for(vector<IdList*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
+      for(FecGroup::iterator it = fecGroups.begin();it != fecGroups.end();it++)
       {
          for(IdIterator it2 = (*it)->begin();it2 != (*it)->end();it2++)
          {

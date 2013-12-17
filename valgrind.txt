@@ -1,0 +1,9 @@
+Valgrind是一個程式，可用來檢查記憶體是否有錯誤的使用情況，例如指標指到不該指的地方或memory leak，在某些方面比gdb還要好用。
+
+使用前要先安裝，打apt-get install valgrind或yum install valgrind就可以了。
+
+要執行時，valgrind後面接檔名跟參數，例如：valgrind ./memTest -f tests/do1，如果有不合法的存取，會顯示invalid read或invalid write以及類似gdb的backtrace，就可以知道程式在哪些地方用到有問題的指標。
+
+如果要檢查是否有memory leak，需要加一個參數--leak-check=full，例如：valgrind --leak-check=full ./memTest -f tests/do1。程式結束後會告訴你哪些指標沒有被delete/free，以及那個指標new/malloc的地方。基本上看definitely lost就好，indirectly lost和possibly lost可以不用理他。
+
+要注意的是，compile的時候g++要加上-g這個參數，否則backtrace可能沒辦法顯示行號。

@@ -24,6 +24,7 @@ class SatSolver;
 typedef vector<CirGate*>           GateList;
 typedef vector<CirGateV>           GateVList;
 typedef vector<unsigned int>       IdList;
+typedef list<IdList*>              FecGroup;
 typedef vector<unsigned>::iterator IdIterator;
 typedef CirGate**                  GateArray;
 typedef CirPiGate**                PiArray;

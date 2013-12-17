@@ -12,6 +12,8 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <sys/time.h>
+#include <sys/types.h>
 #include "cirMgr.h"
 #include "cirGate.h"
 #include "util.h"
@@ -24,25 +26,6 @@ using namespace std;
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-
-// class for use unsigned int as key in hash
-class uintKey
-{
-public:
-   uintKey(unsigned int _n = 0): n(_n)
-   {
-   }
-   bool operator==(const uintKey& k) const
-   {
-      return (this->n == k.n);
-   }
-   size_t operator() () const
-   {
-      return n;
-   }
-private:
-   unsigned int n;
-};
 
 class SimValueKey
 {
@@ -78,8 +61,16 @@ CirMgr::randomSim()
    cout << "MAX_FAILS = " << max_fails << endl;
    unsigned int failsNow = 0;
    unsigned int nCycles = 0;
+   bool firstTime = true;
+   #if SIM_PERFORMANCE
+   timeval tv;
+   #endif
    while(1)
    {
+      #if SIM_PERFORMANCE
+      gettimeofday(&tv, NULL);
+      cout << tv.tv_sec << " " << tv.tv_usec << endl;
+      #endif
       for(unsigned int i = 0;i < this->I;i++)
       {
          #if RAND_MAX == 2147483647
@@ -89,10 +80,12 @@ CirMgr::randomSim()
          #endif
       }
       #if SIM_PERFORMANCE
-      cout << "\nGenerate random value done, clock = " << clock();
+      gettimeofday(&tv, NULL);
+      cout << tv.tv_sec << " " << tv.tv_usec << "\n" << endl;
       #endif
       unsigned int originNFec = fecGroups.size();
-      realSim(32, false);
+      realSim(32, firstTime);
+      firstTime = false;
       if(fecGroups.size() == originNFec)
       {
          failsNow++;
@@ -115,6 +108,7 @@ CirMgr::fileSim(ifstream& patternFile)
 {
    cout << "\n"; // mysterious \n in ref???
    unsigned int nSim = 0;
+   bool firstTime = true;
    // unsigned int are 32-bit long in most platform
    // http://blog.csdn.net/zhangzhenghe/article/details/6766581
    for(unsigned int i = 0;i<this->I;i++)
@@ -144,7 +138,7 @@ CirMgr::fileSim(ifstream& patternFile)
       }
       for(unsigned int i = 0;i < this->I;i++)
       {
-         unsigned int long long tmpBit = (curLine[i] == '1');
+         unsigned long long int tmpBit = (curLine[i] == '1');
          tmpBit <<= (nSim%32);
          simValues[i] += tmpBit; // http://stackoverflow.com/questions/5369770/bool-to-int-conversion
       }
@@ -152,7 +146,8 @@ CirMgr::fileSim(ifstream& patternFile)
       // start simulation
       if(nSim%32 == 0)
       {
-         realSim();
+         realSim(32, firstTime);
+         firstTime = false;
          // clear simValues
          for(unsigned int i = 0;i < this->I;i++)
          {
@@ -166,7 +161,7 @@ CirMgr::fileSim(ifstream& patternFile)
    }
    if(nSim%32 != 0)
    {
-      realSim(nSim%32);
+      realSim(nSim%32, firstTime);
    }
    cout << ((PI.size() != 0 && PO.size() != 0)?nSim:0) << " patterns simulated." << endl;
 }
@@ -176,11 +171,16 @@ CirMgr::fileSim(ifstream& patternFile)
 /*************************************************/
 
 // return value indicate whether fecGroups changed or not
-void CirMgr::realSim(unsigned int N, bool isRandom)
+void CirMgr::realSim(unsigned int N, bool firstTime)
 {
-   if(!isRandom || _simLog)
+   #if SIM_PERFORMANCE
+   timeval tv;
+   gettimeofday(&tv, NULL);
+   cout << "\nIn realSim(), clock = " << (tv.tv_sec - this->tv0.tv_sec) * 1000000 + (tv.tv_usec - this->tv0.tv_usec) << endl;
+   #endif
+   if(_simLog)
    {
-      for(vector<unsigned int>::iterator it = PI.begin();it != PI.end();it++)
+      for(IdList::iterator it = PI.begin();it != PI.end();it++)
       {
          gates[*it/2]->lastSimValue = simValues[PImap[*it/2]];
       }
@@ -189,13 +189,13 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
    {
       return;
    }
-   simCache = new Cache<uintKey, unsigned int>(getHashSize(this->M));
-   if(fecGroups.size() == 0)
+   simCache.reset();
+   simCache.init(this->M);
+   if(firstTime)
    {
       // create the first FEC group, occur when first time simulation or after fraig
-      fecGroups.reserve(this->M + 1); // to avoid reallocation
-      fecGroups.push_back(new vector<unsigned int>);
-      vector<unsigned int>* firstGroup = *(fecGroups.begin());
+      fecGroups.push_back(new IdList);
+      IdList* firstGroup = *(fecGroups.begin());
       firstGroup->reserve(M+1);
       for(unsigned int i = 0;i <= M;i++)
       {
@@ -230,7 +230,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
    }
    if(fecGroups.size() == 1)
    {
-      for(vector<unsigned int>::iterator it = fecGroups[0]->begin()+1;it != fecGroups[0]->end();it++)
+      for(IdList::iterator it = fecGroups.front()->begin()+1;it != fecGroups.front()->end();it++)
       {
          if(gates[*it/2]->lastSimValue == 0xffffffff)
          {
@@ -238,17 +238,17 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          }
       }
    }
-   for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();it++)
+   for(FecGroup::iterator it = fecGroups.begin();it != fecGroups.end();it++)
    {
       unsigned int hashSize = getHashSize((*it)->size());
       #if SIM_PERFORMANCE
       //cout << "Hash size = " << hashSize << ", clock = " << clock() << endl;
       #endif
-      Hash<SimValueKey, vector<unsigned int>*> newFecGroups(hashSize);
-      vector<unsigned int> curGroupCopy;
+      Hash<SimValueKey, IdList*> newFecGroups(hashSize);
+      IdList curGroupCopy;
       curGroupCopy.reserve((*it)->size());
       curGroupCopy.push_back((*it)->front());
-      for(vector<unsigned int>::iterator it2 = (*it)->begin()+1;it2 != (*it)->end();it2++)
+      for(IdList::iterator it2 = (*it)->begin()+1;it2 != (*it)->end();it2++)
       {
          unsigned int curID = *it2;
          CirGate* g = gates[curID/2];
@@ -258,13 +258,10 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
             curGroupCopy.push_back(curID);
             continue;
          }
-         vector<unsigned int> *grpNew;
+         IdList *grpNew;
          if(!newFecGroups.check(SimValueKey(g->lastSimValue), grpNew))
          {
-            #if SIM_PERFORMANCE
-            cout << "Create a new group, clock = " << clock() << endl;
-            #endif
-            grpNew = new vector<unsigned int>(1, curID & 0xfffffffe); // set inv bit to zero
+            grpNew = new IdList(1, curID & 0xfffffffe); // set inv bit to zero
             newFecGroups.forceInsert(SimValueKey(g->lastSimValue), grpNew);
             g->curFECGroup = grpNew;
          }
@@ -282,7 +279,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
          }
       }
       **it = curGroupCopy;
-      for(Hash<SimValueKey, vector<unsigned int>*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end();hashIt++)
+      for(Hash<SimValueKey, IdList*>::iterator hashIt = newFecGroups.begin();hashIt != newFecGroups.end(); ++hashIt)
       {
          if(((*hashIt).second)->size() > 1) // groups with only one element are not "FEC pairs"
          {
@@ -296,7 +293,7 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
       }
    }
    // cleanup groups with only one element
-   for(vector<vector<unsigned int>*>::iterator it = fecGroups.begin();it != fecGroups.end();)
+   for(FecGroup::iterator it = fecGroups.begin();it != fecGroups.end();)
    {
       if((*it)->size() == 1)
       {
@@ -313,19 +310,16 @@ void CirMgr::realSim(unsigned int N, bool isRandom)
    {
       cout << "Total #FEC Group = " << fecGroups.size() << "\n";
    }
-   delete simCache;
-   simCache = NULL;
 }
 
-void CirMgr::gateListSim(vector<unsigned int>* gateList, unsigned int N)
+void CirMgr::gateListSim(IdList* gateList, unsigned int N)
 {
    if(gateList->size() == 0)
    {
       return;
    }
    unsigned int count = 0;
-   unsigned int *firstGate = &gateList->front(), *lastGate = &gateList->back();
-   for(unsigned int* it = firstGate;it <= lastGate;it++)
+   for(IdList::iterator it = gateList->begin(); it != gateList->end(); it++)
    {
       unsigned int gateID = *it;
       if(gates[gateID]->gateType == CONST_GATE || gates[gateID]->gateType == UNDEF_GATE)
@@ -357,7 +351,6 @@ void CirMgr::gateListSim(vector<unsigned int>* gateList, unsigned int N)
 
 unsigned int CirMgr::gateSim(unsigned int gateID, unsigned int N)
 {
-   assert(simCache);
    unsigned int retval = -1;
    CirGate* g = gates[gateID];
    assert(g->gateType == AIG_GATE);
@@ -368,31 +361,37 @@ unsigned int CirMgr::gateSim(unsigned int gateID, unsigned int N)
    {
       tmpResult[0] = 0;
    }
-   else if(g1->gateType == PI_GATE)
-   {
-      tmpResult[0] = simValues[PImap[id[0]]];
-   }
    else
    {
-      if(!simCache->read(uintKey(id[0]), tmpResult[0]))
+      if(!simCache.read(uintKey(id[0]), tmpResult[0]))
       {
-         tmpResult[0] = gateSim(id[0], N);
+         if(g1->gateType == PI_GATE)
+         {
+            tmpResult[0] = simValues[PImap[id[0]]];
+         }
+         else
+         {
+            tmpResult[0] = gateSim(id[0], N);
+         }
       }
    }
    if(g2->gateType == CONST_GATE || g2->gateType == UNDEF_GATE)
    {
       tmpResult[1] = 0;
    }
-   else if(g2->gateType == PI_GATE)
-   {
-      tmpResult[1] = simValues[PImap[id[1]]];
-      // lastSimValue for PI will be filled by realSim()
-   }
    else
    {
-      if(!simCache->read(uintKey(id[1]), tmpResult[1]))
+      if(!simCache.read(uintKey(id[1]), tmpResult[1]))
       {
-         tmpResult[1] = gateSim(id[1], N);
+         if(g2->gateType == PI_GATE)
+         {
+            tmpResult[1] = simValues[PImap[id[1]]];
+            // lastSimValue for PI will be filled by realSim()
+         }
+         else
+         {
+            tmpResult[1] = gateSim(id[1], N);
+         }
       }
    }
    switch((g->fanin[0]%2)*2+(g->fanin[1]%2))
@@ -410,7 +409,7 @@ unsigned int CirMgr::gateSim(unsigned int gateID, unsigned int N)
          retval = (~tmpResult[0]) & (~tmpResult[1]);
          break;
    }
-   simCache->write(uintKey(gateID), retval);
+   simCache.write(uintKey(gateID), retval);
    // save to each gate
    gates[gateID]->lastSimValue = retval;
    return retval;

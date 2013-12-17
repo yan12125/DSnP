@@ -16,6 +16,7 @@
 #include <set>
 #include <map>
 #include <list>
+#include <sys/types.h>
 
 using namespace std;
 
@@ -30,7 +31,25 @@ extern CirMgr *cirMgr;
 class CirIOGate;
 class CirAndGate;
 class CirConstGate;
-class uintKey; // in cirSim.cpp
+
+// class for use unsigned int as key in hash
+class uintKey
+{
+public:
+   uintKey(unsigned int _n = 0): n(_n)
+   {
+   }
+   bool operator==(const uintKey& k) const
+   {
+      return (this->n == k.n);
+   }
+   size_t operator() () const
+   {
+      return n;
+   }
+private:
+   unsigned int n;
+};
 
 // TODO: Define your own data members and member functions
 class CirMgr
@@ -93,9 +112,9 @@ private:
    set<unsigned int> notInDFS2;        // real not in DFS list, undefs considered
    vector<unsigned int> floatingFanin;
    unsigned int* PImap;  // which PI is id N?
-   Cache<uintKey, unsigned int>* simCache;
+   Cache<uintKey, unsigned int> simCache;
    unsigned int* simValues;
-   vector<vector<unsigned int>* > fecGroups;
+   FecGroup fecGroups;
    SatSolver* satSolver;
    
    /* helper functions */
@@ -108,13 +127,15 @@ private:
    // Optimization functions
    void merge(unsigned int, unsigned int, string why);
    // simulation functions
-   void realSim(unsigned int N = 32, bool isRandom = false);
-   void gateListSim(vector<unsigned int>* gates,unsigned int N);
+   void realSim(unsigned int N, bool firstTime);
+   void gateListSim(IdList* gates,unsigned int N);
    unsigned int gateSim(unsigned int gateID, unsigned int N);
 
    // fraig functions
    bool solveBySat(unsigned int id1, unsigned int id2); // both id are 2*id+inv
    void satInitialize();
+
+   timeval tv0;
 };
 
 #endif // CIR_MGR_H
